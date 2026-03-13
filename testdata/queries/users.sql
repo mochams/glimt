@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS users (
 DROP TABLE IF EXISTS users
 
 -- :name insertUser
-INSERT INTO users (name, email) VALUES (?, ?);
+INSERT INTO users (name, email, status, age)
+VALUES (?, ?, ?, ?)
+RETURNING id
 
 -- :name listUsers
-SELECT id, name, email, created_at FROM users;
+SELECT * FROM users

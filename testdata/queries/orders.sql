@@ -12,3 +12,17 @@ CREATE TABLE IF NOT EXISTS orders (
 
 -- :name dropOrdersTable
 DROP TABLE IF EXISTS orders
+
+-- :name insertOrder
+INSERT INTO orders (user_id, product_id, quantity, total)
+VALUES (?, ?, ?, ?)
+RETURNING id
+
+-- :name listOrders
+SELECT * FROM orders
+
+-- :name updateOrderStatus
+UPDATE orders SET status = ? WHERE id = ?
+
+-- :name softDeleteOrder
+UPDATE orders SET deleted_at = NOW() WHERE id = ?
