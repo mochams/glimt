@@ -1,0 +1,30 @@
+name: Test
+
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ["1.25", "1.26"]
+    name: Go ${{ matrix.go }}
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+
+      - uses: actions/checkout@v5
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+
+      - name: Run tests
+        run: make test TEST_FLAGS="-v"
+
+      - name: Run tests with race detector
+        run: make test TEST_FLAGS="-race -v"

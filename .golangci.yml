@@ -1,0 +1,45 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+    - bodyclose
+    - noctx
+    - rowserrcheck
+    - sqlclosecheck
+
+    - misspell
+    - revive
+    - lll
+
+    - prealloc
+    - makezero
+
+    - cyclop
+    - gocognit
+    - funlen
+
+    - gosec
+    - contextcheck
+
+  exclusions:
+    rules:
+      - path: '(.+)_test\.go'
+        linters:
+          - funlen
+          - goconst
+          - lll
+          - gosec
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
