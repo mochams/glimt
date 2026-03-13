@@ -3,25 +3,16 @@
 
 .DEFAULT_GOAL := test
 
-.PHONY: fmt vet test clean lint integration
+.PHONY: fmt vet test test-local clean
 
 TEST_FLAGS ?=
 
 fmt:
 	go fmt ./...
 
-vet: 
-	go vet ./...
-
 test: 
-	go test $(TEST_FLAGS) ./... -coverprofile=coverage.out
-	go tool cover -func=coverage.out
-	
+	go test $(TEST_FLAGS) ./... 
+
 clean: 
 	go clean
 
-lint:
-	golangci-lint run
-
-integration:
-	cd integration && make test

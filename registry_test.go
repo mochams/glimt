@@ -66,7 +66,7 @@ func TestRegistry_LoadFile(t *testing.T) {
 	}
 
 	sql, _ := gotSQL.Build()
-	wantSQL := "INSERT INTO users (name, email) VALUES ($1, $2)"
+	wantSQL := "INSERT INTO users (name, email, status, age)\nVALUES ($1, $2, $3, $4)\nRETURNING id"
 	assertSQL(t, sql, wantSQL)
 }
 
@@ -135,8 +135,15 @@ func TestRegistry_LoadDir(t *testing.T) {
 		"dropOrdersTable",
 		"dropProductsTable",
 		"dropUsersTable",
+		"insertOrder",
+		"insertProduct",
 		"insertUser",
+		"listOrders",
+		"listProducts",
 		"listUsers",
+		"softDeleteOrder",
+		"updateOrderStatus",
+		"updateProductStock",
 	}
 	gotQueries := reg.Queries()
 
@@ -202,7 +209,7 @@ func TestRegistry_LoadFS(t *testing.T) {
 	}
 
 	sql, _ := gotSQL.Build()
-	wantSQL := "INSERT INTO users (name, email) VALUES ($1, $2)"
+	wantSQL := "INSERT INTO users (name, email, status, age)\nVALUES ($1, $2, $3, $4)\nRETURNING id"
 	assertSQL(t, sql, wantSQL)
 }
 
@@ -245,8 +252,15 @@ func TestRegistry_WalkFS(t *testing.T) {
 		"dropOrdersTable",
 		"dropProductsTable",
 		"dropUsersTable",
+		"insertOrder",
+		"insertProduct",
 		"insertUser",
+		"listOrders",
+		"listProducts",
 		"listUsers",
+		"softDeleteOrder",
+		"updateOrderStatus",
+		"updateProductStock",
 	}
 	gotQueries := reg.Queries()
 
@@ -352,7 +366,7 @@ func TestRegistry_DynamicFiltering(t *testing.T) {
 		Limit(10).
 		Build()
 
-	wantSQL := "SELECT id, name, email, created_at FROM users WHERE status = $1 AND created_at > $2 ORDER BY created_at DESC LIMIT $3"
+	wantSQL := "SELECT * FROM users WHERE status = $1 AND created_at > $2 ORDER BY created_at DESC LIMIT $3"
 	assertSQL(t, sql, wantSQL)
 	assertArgs(t, args, []any{"active", "2023-01-01", 10})
 }
