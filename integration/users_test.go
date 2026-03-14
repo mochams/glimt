@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	glimt "github.com/mochams/glimt"
+	gl "github.com/mochams/glimt"
 )
 
 // Models
@@ -85,7 +85,7 @@ func TestUser_GetByID(t *testing.T) {
 
 	id := insertUser(t, "Alice", "alice@example.com", "active", 30)
 
-	sql, args := testState.registry.MustGet("listUsers").Where(glimt.Eq("id", id)).Build()
+	sql, args := testState.registry.MustGet("listUsers").Where(gl.Eq("id", id)).Build()
 	row := testState.db.QueryRow(sql, args...)
 	u := scanUser(t, row)
 
@@ -105,7 +105,7 @@ func TestUser_GetByEmail(t *testing.T) {
 
 	insertUser(t, "Alice", "alice@example.com", "active", 30)
 
-	sql, args := testState.registry.MustGet("listUsers").Where(glimt.Eq("email", "alice@example.com")).Build()
+	sql, args := testState.registry.MustGet("listUsers").Where(gl.Eq("email", "alice@example.com")).Build()
 	row := testState.db.QueryRow(sql, args...)
 	u := scanUser(t, row)
 
@@ -137,7 +137,7 @@ func TestUser_FilterByStatus(t *testing.T) {
 	insertUser(t, "Charlie", "charlie@example.com", "inactive", 40)
 
 	sql, args := testState.registry.MustGet("listUsers").
-		Where(glimt.Eq("status", "active")).
+		Where(gl.Eq("status", "active")).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -154,7 +154,7 @@ func TestUser_FilterByAgeRange(t *testing.T) {
 	insertUser(t, "Charlie", "charlie@example.com", "active", 66)
 
 	sql, args := testState.registry.MustGet("listUsers").
-		Where(glimt.Between("age", 18, 65)).
+		Where(gl.Between("age", 18, 65)).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -171,7 +171,7 @@ func TestUser_FilterByAgeRangeExclusive(t *testing.T) {
 	insertUser(t, "Charlie", "charlie@example.com", "active", 65)
 
 	sql, args := testState.registry.MustGet("listUsers").
-		Where(glimt.RangeOpen("age", 18, 65)).
+		Where(gl.RangeOpen("age", 18, 65)).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -188,7 +188,7 @@ func TestUser_FilterByMultipleStatuses(t *testing.T) {
 	insertUser(t, "Charlie", "charlie@example.com", "suspended", 40)
 
 	sql, args := testState.registry.MustGet("listUsers").
-		Where(glimt.In("status", "active", "inactive")).
+		Where(gl.In("status", "active", "inactive")).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -205,7 +205,7 @@ func TestUser_ExcludeStatus(t *testing.T) {
 	insertUser(t, "Charlie", "charlie@example.com", "suspended", 40)
 
 	sql, args := testState.registry.MustGet("listUsers").
-		Exclude(glimt.Eq("status", "suspended")).
+		Exclude(gl.Eq("status", "suspended")).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -222,9 +222,9 @@ func TestUser_CompoundFilter(t *testing.T) {
 	insertUser(t, "Charlie", "charlie@example.com", "inactive", 30)
 
 	sql, args := testState.registry.MustGet("listUsers").
-		Where(glimt.And(
-			glimt.Eq("status", "active"),
-			glimt.Gte("age", 18),
+		Where(gl.And(
+			gl.Eq("status", "active"),
+			gl.Gte("age", 18),
 		)).
 		Build()
 
@@ -242,9 +242,9 @@ func TestUser_OrFilter(t *testing.T) {
 	insertUser(t, "Charlie", "charlie@example.com", "suspended", 40)
 
 	sql, args := testState.registry.MustGet("listUsers").
-		Where(glimt.Or(
-			glimt.Eq("status", "active"),
-			glimt.Eq("status", "inactive"),
+		Where(gl.Or(
+			gl.Eq("status", "active"),
+			gl.Eq("status", "inactive"),
 		)).
 		Build()
 
@@ -262,9 +262,9 @@ func TestUser_ChainedWhere(t *testing.T) {
 	insertUser(t, "Charlie", "charlie@example.com", "inactive", 30)
 
 	sql, args := testState.registry.MustGet("listUsers").
-		Where(glimt.Eq("status", "active")).
-		Where(glimt.Gte("age", 18)).
-		Where(glimt.Null("deleted_at")).
+		Where(gl.Eq("status", "active")).
+		Where(gl.Gte("age", 18)).
+		Where(gl.Null("deleted_at")).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -301,7 +301,7 @@ func TestUser_NotFilter(t *testing.T) {
 	insertUser(t, "Bob", "bob@example.com", "inactive", 25)
 
 	sql, args := testState.registry.MustGet("listUsers").
-		Where(glimt.Not(glimt.Eq("status", "inactive"))).
+		Where(gl.Not(gl.Eq("status", "inactive"))).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -318,7 +318,7 @@ func TestUser_LikeFilter(t *testing.T) {
 	insertUser(t, "Alice Cooper", "acooper@example.com", "active", 40)
 
 	sql, args := testState.registry.MustGet("listUsers").
-		Where(glimt.Like("name", "Alice%")).
+		Where(gl.Like("name", "Alice%")).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -335,7 +335,7 @@ func TestUser_NotInFilter(t *testing.T) {
 	insertUser(t, "Charlie", "charlie@example.com", "suspended", 40)
 
 	sql, args := testState.registry.MustGet("listUsers").
-		Where(glimt.NotIn("status", "inactive", "suspended")).
+		Where(gl.NotIn("status", "inactive", "suspended")).
 		Build()
 
 	n := countRows(t, sql, args...)
