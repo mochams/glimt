@@ -84,6 +84,12 @@ func TestQueryBuild(t *testing.T) {
 			wantSQL:  "SELECT * FROM users LIMIT $1 OFFSET $2",
 			wantArgs: []any{10, 20},
 		},
+		{
+			name:     "with explicit args",
+			query:    NewQuery("INSERT INTO users VALUES (?, ?)", DialectPostgres).Args("doe", 42),
+			wantSQL:  "INSERT INTO users VALUES ($1, $2)",
+			wantArgs: []any{"doe", 42},
+		},
 	}
 
 	for _, tt := range tests {
