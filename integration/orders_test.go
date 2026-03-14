@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	glimt "github.com/mochams/glimt"
+	gl "github.com/mochams/glimt"
 )
 
 // Models
@@ -76,7 +76,7 @@ func TestOrder_GetByID(t *testing.T) {
 	productID := insertProduct(t, "Laptop", "electronics", "active", 999.99, 10)
 	id := insertOrder(t, userID, productID, 2, 1999.98)
 
-	sql, args := testState.registry.MustGet("listOrders").Where(glimt.Eq("id", id)).Build()
+	sql, args := testState.registry.MustGet("listOrders").Where(gl.Eq("id", id)).Build()
 	row := testState.db.QueryRow(sql, args...)
 	o := scanOrder(t, row)
 
@@ -126,7 +126,7 @@ func TestOrder_ListByUser(t *testing.T) {
 	insertOrder(t, user1, productID, 2, 1999.98)
 	insertOrder(t, user2, productID, 1, 999.99)
 
-	sql, args := testState.registry.MustGet("listOrders").Where(glimt.Eq("user_id", user1)).Build()
+	sql, args := testState.registry.MustGet("listOrders").Where(gl.Eq("user_id", user1)).Build()
 	n := countRows(t, sql, args...)
 
 	if n != 2 {
@@ -151,7 +151,7 @@ func TestOrder_FilterByStatus(t *testing.T) {
 	}
 
 	listSQL, listArgs := testState.registry.MustGet("listOrders").
-		Where(glimt.Eq("status", "pending")).
+		Where(gl.Eq("status", "pending")).
 		Build()
 
 	n := countRows(t, listSQL, listArgs...)
@@ -172,7 +172,7 @@ func TestOrder_FilterByTotalRange(t *testing.T) {
 	insertOrder(t, userID, productID, 4, 3000.00)
 
 	sql, args := testState.registry.MustGet("listOrders").
-		Where(glimt.Between("total", 100.00, 2000.00)).
+		Where(gl.Between("total", 100.00, 2000.00)).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -192,7 +192,7 @@ func TestOrder_FilterByTotalRangeExclusive(t *testing.T) {
 	insertOrder(t, userID, productID, 3, 2000.00)
 
 	sql, args := testState.registry.MustGet("listOrders").
-		Where(glimt.RangeOpen("total", 100.00, 2000.00)).
+		Where(gl.RangeOpen("total", 100.00, 2000.00)).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -216,7 +216,7 @@ func TestOrder_FilterByMultipleStatuses(t *testing.T) {
 	testState.db.Exec(updateSQL, append(updateArgs, "cancelled", id2)...)
 
 	listSQL, listArgs := testState.registry.MustGet("listOrders").
-		Where(glimt.In("status", "completed", "cancelled")).
+		Where(gl.In("status", "completed", "cancelled")).
 		Build()
 
 	n := countRows(t, listSQL, listArgs...)
@@ -239,7 +239,7 @@ func TestOrder_ExcludeStatus(t *testing.T) {
 	testState.db.Exec(updateSQL, append(updateArgs, "cancelled", id1)...)
 
 	listSQL, listArgs := testState.registry.MustGet("listOrders").
-		Exclude(glimt.Eq("status", "cancelled")).
+		Exclude(gl.Eq("status", "cancelled")).
 		Build()
 
 	n := countRows(t, listSQL, listArgs...)
@@ -262,10 +262,10 @@ func TestOrder_CompoundFilter(t *testing.T) {
 	testState.db.Exec(updateSQL, append(updateArgs, "cancelled", id3)...)
 
 	listSQL, listArgs := testState.registry.MustGet("listOrders").
-		Where(glimt.And(
-			glimt.Eq("status", "pending"),
-			glimt.Gte("total", 100.00),
-			glimt.Null("deleted_at"),
+		Where(gl.And(
+			gl.Eq("status", "pending"),
+			gl.Gte("total", 100.00),
+			gl.Null("deleted_at"),
 		)).
 		Build()
 
@@ -289,9 +289,9 @@ func TestOrder_ChainedWhere(t *testing.T) {
 	testState.db.Exec(softSQL, append(softArgs, id3)...)
 
 	listSQL, listArgs := testState.registry.MustGet("listOrders").
-		Where(glimt.Eq("status", "pending")).
-		Where(glimt.Gte("total", 100.00)).
-		Where(glimt.Null("deleted_at")).
+		Where(gl.Eq("status", "pending")).
+		Where(gl.Gte("total", 100.00)).
+		Where(gl.Null("deleted_at")).
 		Build()
 
 	n := countRows(t, listSQL, listArgs...)
@@ -337,7 +337,7 @@ func TestOrder_NotFilter(t *testing.T) {
 	testState.db.Exec(updateSQL, append(updateArgs, "cancelled", id2)...)
 
 	listSQL, listArgs := testState.registry.MustGet("listOrders").
-		Where(glimt.Not(glimt.Eq("status", "cancelled"))).
+		Where(gl.Not(gl.Eq("status", "cancelled"))).
 		Build()
 
 	n := countRows(t, listSQL, listArgs...)

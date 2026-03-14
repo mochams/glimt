@@ -3,7 +3,7 @@ package integration
 import (
 	"testing"
 
-	glimt "github.com/mochams/glimt"
+	gl "github.com/mochams/glimt"
 )
 
 // Models
@@ -64,7 +64,7 @@ func TestProduct_GetByID(t *testing.T) {
 
 	id := insertProduct(t, "Laptop", "electronics", "active", 999.99, 10)
 
-	sql, args := testState.registry.MustGet("listProducts").Where(glimt.Eq("id", id)).Build()
+	sql, args := testState.registry.MustGet("listProducts").Where(gl.Eq("id", id)).Build()
 	row := testState.db.QueryRow(sql, args...)
 	p := scanProduct(t, row)
 
@@ -92,7 +92,7 @@ func TestProduct_UpdateStock(t *testing.T) {
 		t.Fatalf("updateProductStock: %v", err)
 	}
 
-	getSQL, getArgs := testState.registry.MustGet("listProducts").Where(glimt.Eq("id", id)).Build()
+	getSQL, getArgs := testState.registry.MustGet("listProducts").Where(gl.Eq("id", id)).Build()
 	row := testState.db.QueryRow(getSQL, getArgs...)
 	p := scanProduct(t, row)
 
@@ -124,7 +124,7 @@ func TestProduct_FilterByCategory(t *testing.T) {
 	insertProduct(t, "Desk", "furniture", "active", 299.99, 5)
 
 	sql, args := testState.registry.MustGet("listProducts").
-		Where(glimt.Eq("category", "electronics")).
+		Where(gl.Eq("category", "electronics")).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -141,7 +141,7 @@ func TestProduct_FilterByStatus(t *testing.T) {
 	insertProduct(t, "Desk", "furniture", "active", 299.99, 5)
 
 	sql, args := testState.registry.MustGet("listProducts").
-		Where(glimt.Eq("status", "active")).
+		Where(gl.Eq("status", "active")).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -159,7 +159,7 @@ func TestProduct_FilterByPriceRange(t *testing.T) {
 	insertProduct(t, "Pen", "stationery", "active", 1.99, 100)
 
 	sql, args := testState.registry.MustGet("listProducts").
-		Where(glimt.Between("price", 100.00, 600.00)).
+		Where(gl.Between("price", 100.00, 600.00)).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -177,7 +177,7 @@ func TestProduct_FilterByPriceRangeExclusive(t *testing.T) {
 	insertProduct(t, "Pen", "stationery", "active", 299.99, 100)
 
 	sql, args := testState.registry.MustGet("listProducts").
-		Where(glimt.RangeOpen("price", 299.99, 999.99)).
+		Where(gl.RangeOpen("price", 299.99, 999.99)).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -194,7 +194,7 @@ func TestProduct_FilterByStock(t *testing.T) {
 	insertProduct(t, "Desk", "furniture", "active", 299.99, 5)
 
 	sql, args := testState.registry.MustGet("listProducts").
-		Where(glimt.Gt("stock", 0)).
+		Where(gl.Gt("stock", 0)).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -212,7 +212,7 @@ func TestProduct_FilterByMultipleCategories(t *testing.T) {
 	insertProduct(t, "Pen", "stationery", "active", 1.99, 100)
 
 	sql, args := testState.registry.MustGet("listProducts").
-		Where(glimt.In("category", "electronics", "furniture")).
+		Where(gl.In("category", "electronics", "furniture")).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -229,7 +229,7 @@ func TestProduct_ExcludeCategory(t *testing.T) {
 	insertProduct(t, "Desk", "furniture", "active", 299.99, 5)
 
 	sql, args := testState.registry.MustGet("listProducts").
-		Exclude(glimt.Eq("category", "electronics")).
+		Exclude(gl.Eq("category", "electronics")).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -247,10 +247,10 @@ func TestProduct_CompoundFilter(t *testing.T) {
 	insertProduct(t, "Pen", "stationery", "active", 1.99, 0)
 
 	sql, args := testState.registry.MustGet("listProducts").
-		Where(glimt.And(
-			glimt.Eq("status", "active"),
-			glimt.Gt("stock", 0),
-			glimt.Null("deleted_at"),
+		Where(gl.And(
+			gl.Eq("status", "active"),
+			gl.Gt("stock", 0),
+			gl.Null("deleted_at"),
 		)).
 		Build()
 
@@ -268,8 +268,8 @@ func TestProduct_ChainedWhere(t *testing.T) {
 	insertProduct(t, "Desk", "furniture", "active", 299.99, 0)
 
 	sql, args := testState.registry.MustGet("listProducts").
-		Where(glimt.Eq("status", "active")).
-		Where(glimt.Gt("stock", 0)).
+		Where(gl.Eq("status", "active")).
+		Where(gl.Gt("stock", 0)).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -305,7 +305,7 @@ func TestProduct_FilterEmptyResult(t *testing.T) {
 	insertProduct(t, "Laptop", "electronics", "active", 999.99, 10)
 
 	sql, args := testState.registry.MustGet("listProducts").
-		Where(glimt.Eq("category", "nonexistent")).
+		Where(gl.Eq("category", "nonexistent")).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -322,7 +322,7 @@ func TestProduct_NotInFilter(t *testing.T) {
 	insertProduct(t, "Desk", "furniture", "active", 299.99, 5)
 
 	sql, args := testState.registry.MustGet("listProducts").
-		Where(glimt.NotIn("category", "electronics")).
+		Where(gl.NotIn("category", "electronics")).
 		Build()
 
 	n := countRows(t, sql, args...)
@@ -339,7 +339,7 @@ func TestProduct_LikeFilter(t *testing.T) {
 	insertProduct(t, "Phone", "electronics", "active", 499.99, 20)
 
 	sql, args := testState.registry.MustGet("listProducts").
-		Where(glimt.Like("name", "Laptop%")).
+		Where(gl.Like("name", "Laptop%")).
 		Build()
 
 	n := countRows(t, sql, args...)
