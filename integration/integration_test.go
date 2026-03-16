@@ -8,13 +8,13 @@ import (
 	"testing"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	glimt "github.com/mochams/glimt"
+	gl "github.com/mochams/glimt"
 )
 
 // testState provides test state that can be shared across test functions.
 // It is initialized in TestMain.
 var testState struct {
-	registry *glimt.Registry
+	registry *gl.Registry
 	db       *sql.DB
 	dsn      string
 }
@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 		log.Fatal("dsn is required — set -dsn flag or TEST_DATABASE_URL env var")
 	}
 
-	testState.registry = glimt.NewRegistry(glimt.DialectPostgres)
+	testState.registry = gl.NewRegistry(gl.DialectPostgres)
 
 	if err := testState.registry.LoadDir("../testdata/queries"); err != nil {
 		log.Fatalf("failed to load queries: %v", err)

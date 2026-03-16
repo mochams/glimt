@@ -12,6 +12,7 @@ type Query struct {
 	limit   *int
 	offset  *int
 	dialect Dialect
+	args    []any
 }
 
 // NewQuery creates a new Query with the given base SQL and default dialect.
@@ -81,6 +82,16 @@ func (q *Query) Offset(n int) *Query {
 	return q
 }
 
+// Args sets the arguments for the query.
+// Meaningful for queries with raw placeholders in the base SQL.
+// Example: NewQuery("INSERT INTO users VALUES (?, ?)", DialectPostgres).Args("doe", 42)
+// They are inserted first!
+func (q *Query) Args(args ...any) *Query {
+	q.args = append(q.args, args...)
+
+	return q
+}
+
 // Build constructs the final SQL string and arguments for the query.
 // It rewrites placeholders according to the specified dialect.
 func (q *Query) Build() (string, []any) {
@@ -91,13 +102,14 @@ func (q *Query) Build() (string, []any) {
 
 // RawBuild constructs the raw SQL string with "?" placeholders and collects arguments.
 // It does not rewrite placeholders for the dialect.
+// Useful if you if you want to handle placeholders yourself.
 func (q *Query) RawBuild() (string, []any) {
 	b := &sqlBuilder{}
 	b.args = make([]any, 0, 10)
 	b.grow(256)
 
-	// Start with base SQL
 	b.write(q.baseSQL)
+	q.buildArgs(b)
 	q.buildWhere(b)
 	q.buildGroupBy(b)
 	q.buildHaving(b)
@@ -106,6 +118,13 @@ func (q *Query) RawBuild() (string, []any) {
 	q.buildOffset(b)
 
 	return b.string(), b.args
+}
+
+// buildArgs appends the query's arguments to the sqlBuilder's args slice.
+func (q *Query) buildArgs(b *sqlBuilder) {
+	if len(q.args) > 0 {
+		b.args = append(b.args, q.args...)
+	}
 }
 
 // buildWhere adds the WHERE clause to the query if any predicates are set.
