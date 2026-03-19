@@ -87,8 +87,8 @@ func TestProduct_UpdateStock(t *testing.T) {
 
 	id := insertProduct(t, "Laptop", "electronics", "active", 999.99, 10)
 
-	sql, args := testState.registry.MustGet("updateProductStock").Build()
-	if _, err := testState.db.Exec(sql, append(args, 5, id)...); err != nil {
+	sql, args := testState.registry.MustGet("updateProductStock").Args(5, id).Build()
+	if _, err := testState.db.Exec(sql, args...); err != nil {
 		t.Fatalf("updateProductStock: %v", err)
 	}
 

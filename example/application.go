@@ -60,10 +60,10 @@ func (a *Application) routes() {
 	repo := NewUserRepository(a.db, a.registry)
 	handler := NewUserHandler(repo)
 
-	a.mux.HandleFunc("GET /users/", handler.List)
-	a.mux.HandleFunc("GET /users/{id}/", handler.Get)
-	a.mux.HandleFunc("POST /users/", handler.Create)
-	a.mux.HandleFunc("DELETE /users/{id}/", handler.Delete)
+	a.mux.HandleFunc("GET /users", handler.List)
+	a.mux.HandleFunc("GET /users/{id}", handler.Get)
+	a.mux.HandleFunc("POST /users", handler.Create)
+	a.mux.HandleFunc("DELETE /users/{id}", handler.Delete)
 }
 
 // ServeHTTP implements the http.Handler interface.

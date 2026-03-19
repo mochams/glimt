@@ -145,8 +145,8 @@ func TestOrder_FilterByStatus(t *testing.T) {
 	insertOrder(t, userID, productID, 3, 2999.97)
 
 	// update one to completed
-	sql, args := testState.registry.MustGet("updateOrderStatus").Build()
-	if _, err := testState.db.Exec(sql, append(args, "completed", id1)...); err != nil {
+	sql, args := testState.registry.MustGet("updateOrderStatus").Args("completed", id1).Build()
+	if _, err := testState.db.Exec(sql, args...); err != nil {
 		t.Fatalf("updateOrderStatus: %v", err)
 	}
 
@@ -211,9 +211,15 @@ func TestOrder_FilterByMultipleStatuses(t *testing.T) {
 	id2 := insertOrder(t, userID, productID, 2, 1999.98)
 	insertOrder(t, userID, productID, 3, 2999.97)
 
-	updateSQL, updateArgs := testState.registry.MustGet("updateOrderStatus").Build()
-	testState.db.Exec(updateSQL, append(updateArgs, "completed", id1)...)
-	testState.db.Exec(updateSQL, append(updateArgs, "cancelled", id2)...)
+	updateCompletedSQL, updateCompletedArgs := testState.registry.MustGet("updateOrderStatus").
+		Args("completed", id1).
+		Build()
+	updateCancelledSQL, updateCancelledArgs := testState.registry.MustGet("updateOrderStatus").
+		Args("cancelled", id2).
+		Build()
+
+	testState.db.Exec(updateCompletedSQL, updateCompletedArgs...)
+	testState.db.Exec(updateCancelledSQL, updateCancelledArgs...)
 
 	listSQL, listArgs := testState.registry.MustGet("listOrders").
 		Where(gl.In("status", "completed", "cancelled")).
@@ -235,8 +241,8 @@ func TestOrder_ExcludeStatus(t *testing.T) {
 	insertOrder(t, userID, productID, 2, 1999.98)
 	insertOrder(t, userID, productID, 3, 2999.97)
 
-	updateSQL, updateArgs := testState.registry.MustGet("updateOrderStatus").Build()
-	testState.db.Exec(updateSQL, append(updateArgs, "cancelled", id1)...)
+	updateSQL, updateArgs := testState.registry.MustGet("updateOrderStatus").Args("cancelled", id1).Build()
+	testState.db.Exec(updateSQL, updateArgs...)
 
 	listSQL, listArgs := testState.registry.MustGet("listOrders").
 		Exclude(gl.Eq("status", "cancelled")).
@@ -258,8 +264,8 @@ func TestOrder_CompoundFilter(t *testing.T) {
 	insertOrder(t, userID, productID, 2, 50.00)
 	id3 := insertOrder(t, userID, productID, 3, 1500.00)
 
-	updateSQL, updateArgs := testState.registry.MustGet("updateOrderStatus").Build()
-	testState.db.Exec(updateSQL, append(updateArgs, "cancelled", id3)...)
+	updateSQL, updateArgs := testState.registry.MustGet("updateOrderStatus").Args("cancelled", id3).Build()
+	testState.db.Exec(updateSQL, updateArgs...)
 
 	listSQL, listArgs := testState.registry.MustGet("listOrders").
 		Where(gl.And(
@@ -285,8 +291,8 @@ func TestOrder_ChainedWhere(t *testing.T) {
 	insertOrder(t, userID, productID, 2, 50.00)
 	id3 := insertOrder(t, userID, productID, 1, 999.99)
 
-	softSQL, softArgs := testState.registry.MustGet("softDeleteOrder").Build()
-	testState.db.Exec(softSQL, append(softArgs, id3)...)
+	softSQL, softArgs := testState.registry.MustGet("softDeleteOrder").Args(id3).Build()
+	testState.db.Exec(softSQL, softArgs...)
 
 	listSQL, listArgs := testState.registry.MustGet("listOrders").
 		Where(gl.Eq("status", "pending")).
@@ -333,8 +339,8 @@ func TestOrder_NotFilter(t *testing.T) {
 	insertOrder(t, userID, productID, 1, 999.99)
 	id2 := insertOrder(t, userID, productID, 2, 1999.98)
 
-	updateSQL, updateArgs := testState.registry.MustGet("updateOrderStatus").Build()
-	testState.db.Exec(updateSQL, append(updateArgs, "cancelled", id2)...)
+	updateSQL, updateArgs := testState.registry.MustGet("updateOrderStatus").Args("cancelled", id2).Build()
+	testState.db.Exec(updateSQL, updateArgs...)
 
 	listSQL, listArgs := testState.registry.MustGet("listOrders").
 		Where(gl.Not(gl.Eq("status", "cancelled"))).
