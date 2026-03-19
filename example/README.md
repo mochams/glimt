@@ -49,13 +49,13 @@ All query parameters are optional:
 
 ```bash
 # all users
-curl http://localhost:8080/users/
+curl http://localhost:8080/users
 
 # active users aged 18-65
-curl "http://localhost:8080/users/?status=active&min_age=18&max_age=65"
+curl "http://localhost:8080/users?status=active&min_age=18&max_age=65"
 
 # search by name with pagination
-curl "http://localhost:8080/users/?search=alice&limit=10&offset=0"
+curl "http://localhost:8080/users?search=alice&limit=10&offset=0"
 ```
 
 ### Get user
@@ -65,7 +65,7 @@ GET /users/{id}
 ```
 
 ```bash
-curl http://localhost:8080/users/1/
+curl http://localhost:8080/users/1
 ```
 
 ### Create user
@@ -75,7 +75,7 @@ POST /users
 ```
 
 ```bash
-curl -X POST http://localhost:8080/users/ \
+curl -X POST http://localhost:8080/users \
   -H "Content-Type: application/json" \
   -d '{"name": "Alice", "email": "alice@example.com", "age": 30, "status": "active"}'
 ```
@@ -90,7 +90,7 @@ Soft deletes the user — the record is retained in the database with `deleted_a
 Soft deleted users are excluded from all list and get responses.
 
 ```bash
-curl -X DELETE http://localhost:8080/users/1/
+curl -X DELETE http://localhost:8080/users/1
 ```
 
 ## Responses

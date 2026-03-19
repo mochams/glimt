@@ -23,11 +23,10 @@ type User struct {
 
 func insertUser(t *testing.T, name, email, status string, age int) int {
 	t.Helper()
-	sql, args := testState.registry.MustGet("insertUser").Build()
-	args = append([]any{name, email, status, age}, args...)
+	sql, args := testState.registry.MustGet("insertUser").Args(name, email, status, age).Build()
 
 	var id int
-	err := testState.db.QueryRow(sql, name, email, status, age).Scan(&id)
+	err := testState.db.QueryRow(sql, args...).Scan(&id)
 	if err != nil {
 		t.Fatalf("insertUser: %v", err)
 	}

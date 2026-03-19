@@ -21,9 +21,9 @@ func NewUserRepository(db *sql.DB, registry *gl.Registry) *UserRepository {
 
 // Create inserts a new user into the database.
 func (r *UserRepository) Create(u User) (User, error) {
-	query, args := r.registry.MustGet("insertUser").Build()
+	query, args := r.registry.MustGet("insertUser").Args(u.Name, u.Email, u.Age, u.Status).Build()
 
-	result, err := r.db.Exec(query, append(args, u.Name, u.Email, u.Age, u.Status)...)
+	result, err := r.db.Exec(query, args...)
 	if err != nil {
 		return User{}, fmt.Errorf("create user: %w", err)
 	}
@@ -114,9 +114,9 @@ func (r *UserRepository) List(req UserRequest) ([]User, error) {
 
 // SoftDelete marks a user as deleted without removing them from the database.
 func (r *UserRepository) SoftDelete(id int) error {
-	query, args := r.registry.MustGet("softDeleteUser").Build()
+	query, args := r.registry.MustGet("softDeleteUser").Args(id).Build()
 
-	result, err := r.db.Exec(query, append(args, id)...)
+	result, err := r.db.Exec(query, args...)
 	if err != nil {
 		return fmt.Errorf("soft delete user: %w", err)
 	}
