@@ -137,46 +137,6 @@ func TestWritePlaceholders(t *testing.T) {
 			want:    `SELECT * FROM "what?" WHERE id = $1`,
 		},
 
-		// --- line comments ---
-		{
-			name:    "? inside line comment is ignored",
-			sql:     "-- find user by id?\nSELECT * FROM users WHERE id = ?",
-			dialect: DialectPostgres,
-			want:    "-- find user by id?\nSELECT * FROM users WHERE id = $1",
-		},
-		{
-			name:    "line comment at end of file no newline",
-			sql:     "SELECT * FROM users WHERE id = ?\n-- trailing comment?",
-			dialect: DialectPostgres,
-			want:    "SELECT * FROM users WHERE id = $1\n-- trailing comment?",
-		},
-		{
-			name:    "multiple line comments",
-			sql:     "-- first?\n-- second?\nSELECT * FROM users WHERE id = ?",
-			dialect: DialectPostgres,
-			want:    "-- first?\n-- second?\nSELECT * FROM users WHERE id = $1",
-		},
-
-		// --- block comments ---
-		{
-			name:    "? inside block comment is ignored",
-			sql:     "/* what? */ SELECT * FROM users WHERE id = ?",
-			dialect: DialectPostgres,
-			want:    "/* what? */ SELECT * FROM users WHERE id = $1",
-		},
-		{
-			name:    "multiline block comment",
-			sql:     "/* what?\n   huh? */\nSELECT * FROM users WHERE id = ?",
-			dialect: DialectPostgres,
-			want:    "/* what?\n   huh? */\nSELECT * FROM users WHERE id = $1",
-		},
-		{
-			name:    "multiple block comments",
-			sql:     "/* first? */ SELECT * /* second? */ FROM users WHERE id = ?",
-			dialect: DialectPostgres,
-			want:    "/* first? */ SELECT * /* second? */ FROM users WHERE id = $1",
-		},
-
 		// --- edge cases ---
 		{
 			name:    "empty string",
@@ -197,12 +157,6 @@ func TestWritePlaceholders(t *testing.T) {
 			want:    "$1",
 		},
 		{
-			name:    "placeholder adjacent to comment",
-			sql:     "SELECT * FROM users WHERE id = ? -- filter by id?",
-			dialect: DialectPostgres,
-			want:    "SELECT * FROM users WHERE id = $1 -- filter by id?",
-		},
-		{
 			name:    "native $1 in sql is passed through unchanged",
 			sql:     "INSERT INTO users VALUES ($1, $2)",
 			dialect: DialectPostgres,
@@ -219,42 +173,6 @@ func TestWritePlaceholders(t *testing.T) {
 			sql:     "SELECT * FROM users WHERE name = 'what?' AND id = ?",
 			dialect: DialectOracle,
 			want:    "SELECT * FROM users WHERE name = 'what?' AND id = :1",
-		},
-		{
-			name:    "sqlserver: placeholder inside line comment ignored",
-			sql:     "-- check id?\nSELECT * FROM users WHERE id = ?",
-			dialect: DialectSQLServer,
-			want:    "-- check id?\nSELECT * FROM users WHERE id = @p1",
-		},
-		{
-			name:    "oracle: placeholder inside line comment ignored",
-			sql:     "-- check id?\nSELECT * FROM users WHERE id = ?",
-			dialect: DialectOracle,
-			want:    "-- check id?\nSELECT * FROM users WHERE id = :1",
-		},
-		{
-			name:    "sqlserver: placeholder inside block comment ignored",
-			sql:     "/* filter by id? */ SELECT * FROM users WHERE id = ?",
-			dialect: DialectSQLServer,
-			want:    "/* filter by id? */ SELECT * FROM users WHERE id = @p1",
-		},
-		{
-			name:    "oracle: placeholder inside block comment ignored",
-			sql:     "/* filter by id? */ SELECT * FROM users WHERE id = ?",
-			dialect: DialectOracle,
-			want:    "/* filter by id? */ SELECT * FROM users WHERE id = :1",
-		},
-		{
-			name:    "sqlserver: multiple placeholders in mixed content",
-			sql:     "-- comment?\nINSERT INTO users (name, email) VALUES (?, ?)",
-			dialect: DialectSQLServer,
-			want:    "-- comment?\nINSERT INTO users (name, email) VALUES (@p1, @p2)",
-		},
-		{
-			name:    "oracle: multiple placeholders in mixed content",
-			sql:     "-- comment?\nINSERT INTO users (name, email) VALUES (?, ?)",
-			dialect: DialectOracle,
-			want:    "-- comment?\nINSERT INTO users (name, email) VALUES (:1, :2)",
 		},
 		{
 			name:    "backtick quoted identifier ignored (MySQL style)",

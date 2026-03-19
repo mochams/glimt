@@ -5,101 +5,135 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"unicode"
 )
 
-// prefix is the marker used in .sql files to identify named queries.
-const prefix = "-- :name "
+// queryPrefix is the marker used in .sql files to identify named queries.
+const queryPrefix = "-- :name "
+
+// parser reads SQL queries from an io.Reader and organizes them by name.
+type parser struct {
+	queries map[string]string
+}
+
+// newParser creates a new parser instance with an initialized queries map.
+func newParser() *parser {
+	return &parser{queries: make(map[string]string)}
+}
 
 // parse reads SQL queries from an io.Reader
 // It expects queries to be defined in the format: -- :name QueryName
-// Each query's SQL is collected until the next query name is encountered or EOF is reached.
-func parse(r io.Reader) (map[string]string, error) {
-	queries := make(map[string]string)
+func (p *parser) parse(r io.Reader) error {
+	scanner := bufio.NewScanner(r)
 
 	var (
 		currentName string
 		currentSQL  strings.Builder
 	)
 
-	reader := bufio.NewReader(r)
+	flush := func() error {
+		if currentName == "" {
+			return nil
+		}
 
-	for {
-		line, err := reader.ReadString('\n')
-		line = strings.TrimSpace(line)
+		return p.flush(currentName, currentSQL.String())
+	}
 
-		if strings.HasPrefix(line, prefix) {
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+
+		// Check if the line starts with the query name prefix
+		if strings.HasPrefix(line, queryPrefix) {
 			// If we were building a query, save it before starting a new one
-			if currentName != "" {
-				sql := strings.TrimSpace(currentSQL.String())
-
-				err := flushQuery(queries, currentName, sql)
-				if err != nil {
-					return nil, err
-				}
-
-				currentSQL.Reset()
+			if err := flush(); err != nil {
+				return err
 			}
 
-			currentName = strings.TrimSpace(line[len(prefix):])
-
+			// Start a new query
+			currentName = strings.TrimSpace(line[len(queryPrefix):])
+			currentSQL.Reset()
 			continue
 		}
 
+		// Skip comment lines that are not query names
+		if strings.HasPrefix(line, "--") {
+			continue
+		}
+
+		// If we're currently building a query, append the line to the SQL
 		if currentName != "" {
 			currentSQL.WriteString(line)
 			currentSQL.WriteByte('\n')
 		}
-
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			return nil, err
-		}
 	}
 
-	if currentName != "" {
-		sql := strings.TrimSpace(currentSQL.String())
-
-		err := flushQuery(queries, currentName, sql)
-		if err != nil {
-			return nil, err
-		}
+	// After the loop, check if there's an unfinished query to flush
+	if err := flush(); err != nil {
+		return err
 	}
 
-	return queries, nil
+	return scanner.Err()
 }
 
-// flushQuery adds a query to the queries map, ensuring there are no duplicate names.
+// flush adds a query to the queries map, ensuring there are no duplicate names.
 // It also checks that the query body is not empty.
-func flushQuery(queries map[string]string, name, sql string) error {
-	if !isValidName(name) {
+func (p *parser) flush(name, sql string) error {
+	sql = p.cleanSQL(sql)
+
+	if !validName(name) {
 		return fmt.Errorf("invalid query name %q", name)
 	}
-
 	if sql == "" {
 		return fmt.Errorf("query %q has empty body", name)
 	}
-
-	if _, exists := queries[name]; exists {
+	if _, exists := p.queries[name]; exists {
 		return fmt.Errorf("duplicate query name %q", name)
 	}
 
-	sql = strings.TrimRight(sql, ";")
-	queries[name] = sql
-
+	p.queries[name] = sql
 	return nil
 }
 
-// isValidName checks if a query name is valid (consists of letters, digits,
-// and underscores, and does not start with a digit).
-func isValidName(name string) bool {
-	for i, c := range name {
-		if !unicode.IsLetter(c) && c != '_' && (i == 0 || !unicode.IsDigit(c)) {
-			return false
+// cleanSQL removes comments and trims whitespace from a SQL string.
+func (p *parser) cleanSQL(sql string) string {
+	sql = p.stripBlockComments(sql)
+
+	lines := strings.Split(sql, "\n")
+	var cleaned []string
+
+	for _, line := range lines {
+		line = p.stripInlineComments(line)
+		line = strings.Join(strings.Fields(line), " ")
+		if line != "" {
+			cleaned = append(cleaned, line)
 		}
 	}
-	return true
+
+	result := strings.Join(cleaned, "\n")
+	return strings.TrimRight(result, ";")
+}
+
+// stripInlineComments removes any inline comments from a line of SQL.
+func (p *parser) stripInlineComments(line string) string {
+	before, _, ok := strings.Cut(line, "--")
+	if !ok {
+		return line
+	}
+	return before
+}
+
+// stripBlockComments removes block comments that span multiple lines.
+func (p *parser) stripBlockComments(sql string) string {
+	for {
+		start := strings.Index(sql, "/*")
+		if start == -1 {
+			break
+		}
+		end := strings.Index(sql[start:], "*/")
+		if end == -1 {
+			// unclosed block comment — strip from /* to end
+			return strings.TrimSpace(sql[:start])
+		}
+		sql = sql[:start] + sql[start+end+2:]
+	}
+	return sql
 }

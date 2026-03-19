@@ -124,35 +124,3 @@ Error responses:
   ]
 }
 ```
-
-## How glimt is used
-
-The example is built around glimt's core pattern — write SQL once in a file, filter dynamically at runtime:
-
-**`queries.sql`** defines the base query:
-
-```sql
--- :name listUsers
-SELECT * FROM users
-```
-
-**`repository.go`** extends it based on request parameters:
-
-```go
-q := registry.MustGet("listUsers").
-    Where(glimt.IsNull("deleted_at"))
-
-if req.Status != "" {
-    q.Where(glimt.Eq("status", req.Status))
-}
-if req.MinAge > 0 {
-    q.Where(glimt.Gte("age", req.MinAge))
-}
-if req.Search != "" {
-    q.Where(glimt.Like("name", "%" + req.Search + "%"))
-}
-
-sql, args := q.Limit(req.Limit).Offset(req.Offset).Build()
-```
-
-One base query. Any combination of filters. No string concatenation. No SQL injection risk.
