@@ -54,6 +54,40 @@ Installation
 go get github.com/mochams/glimt
 ```
 
+Define queries in `.sql` files and load them by name.
+
+```sql
+-- :name listUsers
+SELECT * FROM users
+```
+
+```go
+reg := gl.NewRegistry(gl.DialectPostgres)
+
+reg.Load("queries/users.sql")
+
+admins, args := reg.MustGet("listUsers").
+    Where(gl.Eq("role", "admin")).
+    Limit(10).
+    Build()
+
+user, args := reg.MustGet("listUsers").
+    Where(gl.Eq("id", "user_id")).
+    Limit(1).
+    Build()
+```
+
+Work seamlessly with Go's `embed`.
+
+```go
+//go:embed queries
+var sqlFiles embed.FS
+
+reg := gl.NewRegistry(gl.DialectPostgres)
+
+reg.WalkFS(sqlFiles, "queries")
+```
+
 Glimt lets you build queries directly in Go when needed
 
 ```go
@@ -69,50 +103,6 @@ sql, args := reg.Query("SELECT * FROM users").
     Offset(0).
     Build()
 ```
-
-Define queries in `.sql` files and load them by name.
-
-```sql
--- :name listUsers
-SELECT * FROM users
-
--- :name getUserByID
-SELECT * FROM users WHERE id = ?
-```
-
-```go
-reg := gl.NewRegistry(gl.DialectPostgres)
-
-reg.Load("queries/users.sql")
-
-sql, args := reg.MustGet("listUsers").
-    Where(gl.Eq("role", "admin")).
-    OrderBy("created_at DESC").
-    Limit(10).
-    Build()
-```
-
-Work seamlessly with Go's `embed`.
-
-```go
-//go:embed queries
-var sqlFiles embed.FS
-
-reg := gl.NewRegistry(gl.DialectPostgres)
-
-reg.WalkFS(sqlFiles, "queries")
-```
-
-Glimt automatically writes placeholders for the target database.
-
-| Database       | Example placeholders |
-| -------------- | -------------------- |
-| Postgres       | `$1, $2, $3`         |
-| MySQL / SQLite | `?, ?, ?`            |
-| SQL Server     | `@p1, @p2`           |
-| Oracle         | `:1, :2`             |
-
-SQL files should always use `?` placeholders. They are rewritten to the correct format at build time.
 
 Queries are defined using `-- :name` annotations.
 
@@ -131,8 +121,7 @@ Instead attach conditions through the builder:
 
 ```sql
 -- :name listUsers
-SELECT *
-FROM users
+SELECT * FROM users
 ```
 
 ```go
@@ -146,6 +135,33 @@ guests := reg.MustGet("listUsers").
 ```
 
 One base query, multiple use cases, no duplication.
+
+Glimt automatically writes placeholders for the target database.
+
+<table style="width: 100%;">
+  <tr>
+    <th>Database</th>
+    <th>Placeholders</th>
+  </tr>
+  <tr>
+    <td>Postgres</td>
+    <td>$1, $2, $3</td>
+  </tr>
+  <tr>
+    <td>MySQL, SQLite</td>
+    <td>?, ?, ?</td>
+  </tr>
+  <tr>
+    <td>SQL Server</td>
+    <td>@p1, @p2, @p3</td>
+  </tr>
+  <tr>
+    <td>Oracle</td>
+    <td>:1, :2, :3</td>
+  </tr>
+</table>
+
+SQL files should always use `?` placeholders. They are rewritten to the correct format at build time.
 
 Glimt aims to stay **SQL-first**, **Composable**, **Lightweight**, and **Dependency-free**
 

@@ -30,23 +30,18 @@ func writePlaceholders(sql string, dialect Dialect) string {
 	return buf.String()
 }
 
-// processPlaceholders scans the SQL string and appends characters to the buffer, rewriting '?'
-// placeholders according to the dialect.
-// It correctly handles string literals and comments to avoid writing placeholders inside them.
+// processPlaceholders scans the SQL string and rewrites '?' placeholders
+// according to the dialect. Skips placeholders inside string literals.
 func processPlaceholders(buf *strings.Builder, sql string, dialect Dialect) {
 	n := 1
 	i := 0
 	for i < len(sql) {
-		switch {
-		case isLineComment(sql, i):
-			i = consumeLineComment(buf, sql, i)
-		case isBlockComment(sql, i):
-			i = consumeBlockComment(buf, sql, i)
-		case sql[i] == '\'':
+		switch sql[i] {
+		case '\'':
 			i = consumeSingleQuote(buf, sql, i)
-		case sql[i] == '"':
+		case '"':
 			i = consumeDoubleQuote(buf, sql, i)
-		case sql[i] == '?':
+		case '?':
 			writePlaceholder(buf, dialect, n)
 			n++
 			i++
@@ -55,43 +50,6 @@ func processPlaceholders(buf *strings.Builder, sql string, dialect Dialect) {
 			i++
 		}
 	}
-}
-
-// isLineComment checks if the current position in the SQL string starts a line comment (e.g., "--").
-func isLineComment(sql string, i int) bool {
-	return i+1 < len(sql) && sql[i] == '-' && sql[i+1] == '-'
-}
-
-// isBlockComment checks if the current position in the SQL string starts a block comment (e.g., "/*").
-func isBlockComment(sql string, i int) bool {
-	return i+1 < len(sql) && sql[i] == '/' && sql[i+1] == '*'
-}
-
-// consumeLineComment appends chars from a line comment to the buffer until the end of the line.
-func consumeLineComment(buf *strings.Builder, sql string, i int) int {
-	for i < len(sql) {
-		buf.WriteByte(sql[i])
-		if sql[i] == '\n' {
-			i++
-			break
-		}
-		i++
-	}
-	return i
-}
-
-// consumeBlockComment appends chars from a block comment to the buffer until the closing "*/" is found.
-func consumeBlockComment(buf *strings.Builder, sql string, i int) int {
-	for i < len(sql) {
-		buf.WriteByte(sql[i])
-		if sql[i] == '*' && i+1 < len(sql) && sql[i+1] == '/' {
-			buf.WriteByte('/')
-			i += 2
-			break
-		}
-		i++
-	}
-	return i
 }
 
 // consumeSingleQuote appends chars from a single-quoted string literal to the buffer, handling escaped single quotes.

@@ -68,12 +68,12 @@ func (r *Registry) Load(path string) error {
 		}
 	}()
 
-	queries, err := parse(f)
-	if err != nil {
+	p := newParser()
+	if err := p.parse(f); err != nil {
 		return fmt.Errorf("glimt: parse %s: %w", path, err)
 	}
 
-	return r.merge(path, queries)
+	return r.merge(path, p.queries)
 }
 
 // LoadFS reads SQL queries from a file in the given fs.FS at the specified path and adds them to the registry.
@@ -89,12 +89,12 @@ func (r *Registry) LoadFS(fsys fs.FS, path string) error {
 		}
 	}()
 
-	queries, err := parse(f)
-	if err != nil {
+	p := newParser()
+	if err := p.parse(f); err != nil {
 		return fmt.Errorf("glimt: parse %s: %w", path, err)
 	}
 
-	return r.merge(path, queries)
+	return r.merge(path, p.queries)
 }
 
 // merge adds queries to the registry, checking for duplicates.
