@@ -28,7 +28,7 @@
 // Load at startup and query at runtime:
 //
 //	reg := glimt.NewRegistry(glimt.DialectPostgres)
-//	if err := reg.LoadDir("queries/"); err != nil {
+//	if err := reg.Load("queries/"); err != nil {
 //	    log.Fatal(err)
 //	}
 //
@@ -85,14 +85,31 @@
 //
 //	glimt.NewRegistry(glimt.DialectPostgres)   // $1, $2, ...
 //	glimt.NewRegistry(glimt.DialectMySQL)      // ?, ?, ...
+//	glimt.NewRegistry(glimt.DialectSQLite)     // ?, ?, ...
 //	glimt.NewRegistry(glimt.DialectSQLServer)  // @p1, @p2, ...
 //	glimt.NewRegistry(glimt.DialectOracle)     // :1, :2, ...
 //
+// # Loading Queries
+//
+// The registry provides four methods for loading SQL files:
+//
+//	// load all .sql files recursively from a directory
+//	reg.Load("queries/")
+//
+//	// load all .sql files recursively from an fs.FS
+//	reg.LoadFS(sqlFiles, "queries")
+//
+//	// load a single file by path
+//	reg.LoadFile("queries/users.sql")
+//
+//	// load a single file from an fs.FS
+//	reg.LoadFileFS(sqlFiles, "queries/users.sql")
+//
 // # SQL File Format
 //
-// Files use '-- :name annotations'. A single file can contain
-// multiple named queries. Use ? as the placeholder regardless of dialect —
-// glimt rewrites them at build time.
+// Files use '-- :name annotations'. A single file can contain multiple named
+// queries. Use ? as the placeholder regardless of dialect — glimt writes
+// them at build time.
 //
 //	-- :name listUsers
 //	SELECT * FROM users
@@ -100,6 +117,8 @@
 //	-- :name getUserByID
 //	SELECT * FROM users WHERE id = ?
 //
+// SQL comments are stripped at load time — both line comments (--)
+// and block comments (/* */) are removed before storing the query.
 // Query names must be unique within a file and across all loaded files.
 // Duplicates and empty query bodies are caught at load time.
 //
@@ -111,7 +130,13 @@
 //	var sqlFiles embed.FS
 //
 //	reg := glimt.NewRegistry(glimt.DialectPostgres)
-//	if err := reg.WalkFS(sqlFiles, "queries"); err != nil {
+//	if err := reg.LoadFS(sqlFiles, "queries"); err != nil {
 //	    log.Fatal(err)
 //	}
+//
+// # Conventions
+//
+// Named queries in .sql files should not contain an outer WHERE clause if
+// dynamic filtering via Where() is intended. WHERE clauses inside subqueries,
+// CTEs, and EXISTS expressions are unaffected by the builder and are always safe.
 package glimt

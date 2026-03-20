@@ -90,6 +90,16 @@ func TestQueryBuild(t *testing.T) {
 			wantSQL:  "INSERT INTO users VALUES ($1, $2)",
 			wantArgs: []any{"doe", 42},
 		},
+		{
+			name: "query with CTE",
+			query: NewQuery("WITH active_users AS (SELECT * FROM users WHERE deleted_at IS NULL) SELECT * FROM active_users", DialectPostgres).
+				Where(Eq("status", "active")).
+				Where(Gt("age", 18)).
+				OrderBy("created_at DESC").
+				Limit(10),
+			wantSQL:  "WITH active_users AS (SELECT * FROM users WHERE deleted_at IS NULL) SELECT * FROM active_users WHERE status = $1 AND age > $2 ORDER BY created_at DESC LIMIT $3",
+			wantArgs: []any{"active", 18, 10},
+		},
 	}
 
 	for _, tt := range tests {

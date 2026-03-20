@@ -11,7 +11,7 @@ func getRegistry(b *testing.B) *Registry {
 
 	registry := NewRegistry(DialectPostgres)
 
-	err := registry.LoadDir("testdata/queries")
+	err := registry.Load("testdata/queries")
 	if err != nil {
 		b.Fatalf("failed to load queries: %v", err)
 	}

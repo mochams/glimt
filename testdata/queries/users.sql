@@ -19,3 +19,12 @@ RETURNING id
 
 -- :name listUsers
 SELECT * FROM users
+
+
+-- :name listActiveUsers
+-- Sample use of safe WHERE query with CTE
+WITH active_users AS (
+    SELECT * FROM users
+    WHERE deleted_at IS NULL
+)
+SELECT * FROM active_users
