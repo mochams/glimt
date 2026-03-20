@@ -64,7 +64,7 @@ SELECT * FROM users
 ```go
 reg := gl.NewRegistry(gl.DialectPostgres)
 
-reg.Load("queries/users.sql")
+reg.LoadFile("queries/users.sql")
 
 admins, args := reg.MustGet("listUsers").
     Where(gl.Eq("role", "admin")).
@@ -85,7 +85,7 @@ var sqlFiles embed.FS
 
 reg := gl.NewRegistry(gl.DialectPostgres)
 
-reg.WalkFS(sqlFiles, "queries")
+reg.LoadFS(sqlFiles, "queries")
 ```
 
 Glimt lets you build queries directly in Go when needed

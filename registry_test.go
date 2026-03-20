@@ -56,7 +56,7 @@ func TestRegistry_AdHocQuery(t *testing.T) {
 
 func TestRegistry_LoadFile(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
-	if err := reg.Load("testdata/queries/users.sql"); err != nil {
+	if err := reg.LoadFile("testdata/queries/users.sql"); err != nil {
 		t.Fatalf("failed to load queries: %v", err)
 	}
 
@@ -73,31 +73,31 @@ func TestRegistry_LoadFile(t *testing.T) {
 func TestRegistry_LoadDuplicateFile(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.Load("testdata/invalid_queries/duplicate_names.sql")
+	err := reg.LoadFile("testdata/invalid_queries/duplicate_names.sql")
 	if err == nil {
 		t.Fatal("expected error for duplicate query names, got nil")
 	}
 
-	errMsg := "glimt: parse testdata/invalid_queries/duplicate_names.sql: duplicate query name \"listUsers\""
+	errMsg := "glimt: parse duplicate_names.sql: duplicate query name \"listUsers\""
 	assertErrorContains(t, err, errMsg)
 }
 
 func TestRegistry_LoadNonexistentFile(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.Load("testdata/queries/nonexistent.sql")
+	err := reg.LoadFile("testdata/queries/nonexistent.sql")
 	if err == nil {
 		t.Fatal("expected error for nonexistent file, got nil")
 	}
 
-	errMsg := "glimt: open testdata/queries/nonexistent.sql: open testdata/queries/nonexistent.sql: no such file or directory"
+	errMsg := "glimt: open nonexistent.sql: open nonexistent.sql: no such file or directory"
 	assertErrorContains(t, err, errMsg)
 }
 
 func TestRegistry_LoadInvalidNaming(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.Load("testdata/invalid_queries/wrong_names.sql")
+	err := reg.LoadFile("testdata/invalid_queries/wrong_names.sql")
 	if err != nil {
 		t.Fatal("unexpected error loading file:", err)
 	}
@@ -110,7 +110,7 @@ func TestRegistry_LoadInvalidNaming(t *testing.T) {
 func TestRegistry_LoadEmptyFile(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.Load("testdata/queries/empty.sql")
+	err := reg.LoadFile("testdata/queries/empty.sql")
 	if err != nil {
 		t.Fatal("unexpected error loading file:", err)
 	}
@@ -123,7 +123,7 @@ func TestRegistry_LoadEmptyFile(t *testing.T) {
 func TestRegistry_LoadDir(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.LoadDir("testdata/queries")
+	err := reg.Load("testdata/queries")
 	if err != nil {
 		t.Fatalf("failed to load queries: %v", err)
 	}
@@ -138,6 +138,7 @@ func TestRegistry_LoadDir(t *testing.T) {
 		"insertOrder",
 		"insertProduct",
 		"insertUser",
+		"listActiveUsers",
 		"listOrders",
 		"listProducts",
 		"listUsers",
@@ -161,19 +162,19 @@ func TestRegistry_LoadDir(t *testing.T) {
 func TestRegistry_LoadNonExistentFolder(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.LoadDir("testdata/nonexistent")
+	err := reg.Load("testdata/nonexistent")
 	if err == nil {
 		t.Fatal("expected error for nonexistent directory, got nil")
 	}
 
-	errMsg := "glimt: read dir testdata/nonexistent: open testdata/nonexistent: no such file or directory"
+	errMsg := "glimt: read dir .: stat .: no such file or directory"
 	assertErrorContains(t, err, errMsg)
 }
 
 func TestRegistry_LoadEmptyDir(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.LoadDir("testdata/empty_queries")
+	err := reg.Load("testdata/empty_queries")
 	if err != nil {
 		t.Fatal("unexpected error loading empty directory:", err)
 	}
@@ -186,19 +187,19 @@ func TestRegistry_LoadEmptyDir(t *testing.T) {
 func TestRegistry_LoadInvalidQueries(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.LoadDir("testdata/invalid_queries")
+	err := reg.Load("testdata/invalid_queries")
 	if err == nil {
 		t.Fatal("expected error for nonexistent directory, got nil")
 	}
 
-	errMsg := "glimt: parse testdata/invalid_queries/duplicate_names.sql: duplicate query name \"listUsers\""
+	errMsg := "glimt: parse duplicate_names.sql: duplicate query name \"listUsers\""
 	assertErrorContains(t, err, errMsg)
 }
 
-func TestRegistry_LoadFS(t *testing.T) {
+func TestRegistry_LoadFileFS(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.LoadFS(os.DirFS("testdata/queries"), "users.sql")
+	err := reg.LoadFileFS(os.DirFS("testdata/queries"), "users.sql")
 	if err != nil {
 		t.Fatalf("failed to load queries from FS: %v", err)
 	}
@@ -213,10 +214,10 @@ func TestRegistry_LoadFS(t *testing.T) {
 	assertSQL(t, sql, wantSQL)
 }
 
-func TestRegistry_LoadFSNonexistentFile(t *testing.T) {
+func TestRegistry_LoadFileFSNonexistentFile(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.LoadFS(os.DirFS("testdata/queries"), "nonexistent.sql")
+	err := reg.LoadFileFS(os.DirFS("testdata/queries"), "nonexistent.sql")
 	if err == nil {
 		t.Fatal("expected error for nonexistent file in FS, got nil")
 	}
@@ -225,10 +226,10 @@ func TestRegistry_LoadFSNonexistentFile(t *testing.T) {
 	assertErrorContains(t, err, errMsg)
 }
 
-func TestRegistry_LoadFSDuplicate(t *testing.T) {
+func TestRegistry_LoadFileFSDuplicate(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.LoadFS(os.DirFS("testdata/invalid_queries"), "duplicate_names.sql")
+	err := reg.LoadFileFS(os.DirFS("testdata/invalid_queries"), "duplicate_names.sql")
 	if err == nil {
 		t.Fatal("expected error for duplicate query names in FS, got nil")
 	}
@@ -237,10 +238,10 @@ func TestRegistry_LoadFSDuplicate(t *testing.T) {
 	assertErrorContains(t, err, errMsg)
 }
 
-func TestRegistry_WalkFS(t *testing.T) {
+func TestRegistry_LoadFS(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.WalkFS(os.DirFS("testdata/queries"), ".")
+	err := reg.LoadFS(os.DirFS("testdata/queries"), ".")
 	if err != nil {
 		t.Fatalf("failed to walk FS: %v", err)
 	}
@@ -255,6 +256,7 @@ func TestRegistry_WalkFS(t *testing.T) {
 		"insertOrder",
 		"insertProduct",
 		"insertUser",
+		"listActiveUsers",
 		"listOrders",
 		"listProducts",
 		"listUsers",
@@ -275,22 +277,22 @@ func TestRegistry_WalkFS(t *testing.T) {
 	}
 }
 
-func TestRegistry_WalkFSNonexistentDir(t *testing.T) {
+func TestRegistry_LoadFSNonexistentDir(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.WalkFS(os.DirFS("testdata/queries"), "nonexistent")
+	err := reg.LoadFS(os.DirFS("testdata/queries"), "nonexistent")
 	if err == nil {
 		t.Fatal("expected error for nonexistent directory in FS, got nil")
 	}
 
-	errMsg := "glimt: read dir nonexistent: open nonexistent: no such file or directory"
+	errMsg := "glimt: read dir nonexistent: stat nonexistent: no such file or directory"
 	assertErrorContains(t, err, errMsg)
 }
 
-func TestRegistry_WalkFSInvalidQueries(t *testing.T) {
+func TestRegistry_LoadFSInvalidQueries(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.WalkFS(os.DirFS("testdata/invalid_queries"), ".")
+	err := reg.LoadFS(os.DirFS("testdata/invalid_queries"), ".")
 	if err == nil {
 		t.Fatal("expected error for invalid queries in FS, got nil")
 	}
@@ -299,10 +301,10 @@ func TestRegistry_WalkFSInvalidQueries(t *testing.T) {
 	assertErrorContains(t, err, errMsg)
 }
 
-func TestRegistry_WalkFSEmptyDir(t *testing.T) {
+func TestRegistry_LoadFSEmptyDir(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.WalkFS(os.DirFS("testdata/empty_queries"), ".")
+	err := reg.LoadFS(os.DirFS("testdata/empty_queries"), ".")
 	if err != nil {
 		t.Fatal("unexpected error walking empty directory in FS:", err)
 	}
@@ -315,7 +317,7 @@ func TestRegistry_WalkFSEmptyDir(t *testing.T) {
 func TestRegistry_Has(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.Load("testdata/queries/users.sql")
+	err := reg.LoadFile("testdata/queries/users.sql")
 	if err != nil {
 		t.Fatalf("failed to load queries: %v", err)
 	}
@@ -332,13 +334,13 @@ func TestRegistry_Has(t *testing.T) {
 func TestRegistry_Queries(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.Load("testdata/queries/users.sql")
+	err := reg.LoadFile("testdata/queries/users.sql")
 	if err != nil {
 		t.Fatalf("failed to load queries: %v", err)
 	}
 
 	gotQueries := reg.Queries()
-	expectedQueries := []string{"createUsersTable", "dropUsersTable", "insertUser", "listUsers"}
+	expectedQueries := []string{"createUsersTable", "dropUsersTable", "insertUser", "listActiveUsers", "listUsers"}
 
 	if len(gotQueries) != len(expectedQueries) {
 		t.Fatalf("expected %d queries, got %d", len(expectedQueries), len(gotQueries))
@@ -354,7 +356,7 @@ func TestRegistry_Queries(t *testing.T) {
 func TestRegistry_DynamicFiltering(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
-	err := reg.LoadDir("testdata/queries")
+	err := reg.Load("testdata/queries")
 	if err != nil {
 		t.Fatalf("failed to load queries: %v", err)
 	}
