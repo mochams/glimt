@@ -25,7 +25,7 @@ func NewApplication(dsn, queriesFile string) (*Application, error) {
 	}
 
 	registry := gl.NewRegistry(gl.DialectSQLite)
-	if err := registry.Load(queriesFile); err != nil {
+	if err := registry.LoadFile(queriesFile); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("load queries: %w", err)
 	}

@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/jackc/pgx/v5 v5.8.0
-	github.com/mochams/glimt v0.2.0
+	github.com/mochams/glimt v0.3.0
 )
 
 require (
