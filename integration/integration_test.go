@@ -31,7 +31,7 @@ func TestMain(m *testing.M) {
 
 	testState.registry = gl.NewRegistry(gl.DialectPostgres)
 
-	if err := testState.registry.LoadDir("../testdata/queries"); err != nil {
+	if err := testState.registry.Load("../testdata/queries"); err != nil {
 		log.Fatalf("failed to load queries: %v", err)
 	}
 
