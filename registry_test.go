@@ -1,6 +1,7 @@
 package glimt
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"testing"
@@ -28,9 +29,11 @@ func TestRegistry_GetUnknownQuery(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
 	_, err := reg.Get("nonexistent")
-	if err == nil {
-		t.Error("expected error for unknown query, got nil")
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
 	}
+
+	assertErrorContains(t, err, `glimt: query not found: "nonexistent"`)
 }
 
 func TestRegistry_MustGetPanicsOnUnknown(t *testing.T) {
@@ -78,7 +81,7 @@ func TestRegistry_LoadDuplicateFile(t *testing.T) {
 		t.Fatal("expected error for duplicate query names, got nil")
 	}
 
-	errMsg := "glimt: parse duplicate_names.sql: duplicate query name \"listUsers\""
+	errMsg := "glimt: parse testdata/invalid_queries/duplicate_names.sql: line 4: duplicate query name \"listUsers\""
 	assertErrorContains(t, err, errMsg)
 }
 
@@ -90,17 +93,18 @@ func TestRegistry_LoadNonexistentFile(t *testing.T) {
 		t.Fatal("expected error for nonexistent file, got nil")
 	}
 
-	errMsg := "glimt: open nonexistent.sql: open nonexistent.sql: no such file or directory"
+	errMsg := "glimt: open testdata/queries/nonexistent.sql: open nonexistent.sql: no such file or directory"
 	assertErrorContains(t, err, errMsg)
 }
 
-func TestRegistry_LoadInvalidNaming(t *testing.T) {
+func TestRegistry_LoadMalformedAnnotation(t *testing.T) {
 	reg := NewRegistry(DialectPostgres)
 
 	err := reg.LoadFile("testdata/invalid_queries/wrong_names.sql")
-	if err != nil {
-		t.Fatal("unexpected error loading file:", err)
-	}
+
+	errMsg := "glimt: parse testdata/invalid_queries/wrong_names.sql: line 1: " +
+		"malformed annotation \"name: createProductsTable\": use \"-- :name <name>\""
+	assertErrorContains(t, err, errMsg)
 
 	if len(reg.Queries()) != 0 {
 		t.Errorf("expected no queries loaded, got %d", len(reg.Queries()))
@@ -129,6 +133,7 @@ func TestRegistry_LoadDir(t *testing.T) {
 	}
 
 	expectedQueries := []string{
+		"countUsersByStatus",
 		"createOrdersTable",
 		"createProductsTable",
 		"createUsersTable",
@@ -167,7 +172,7 @@ func TestRegistry_LoadNonExistentFolder(t *testing.T) {
 		t.Fatal("expected error for nonexistent directory, got nil")
 	}
 
-	errMsg := "glimt: read dir .: stat .: no such file or directory"
+	errMsg := "glimt: read dir testdata/nonexistent: stat testdata/nonexistent: no such file or directory"
 	assertErrorContains(t, err, errMsg)
 }
 
@@ -189,10 +194,10 @@ func TestRegistry_LoadInvalidQueries(t *testing.T) {
 
 	err := reg.Load("testdata/invalid_queries")
 	if err == nil {
-		t.Fatal("expected error for nonexistent directory, got nil")
+		t.Fatal("expected error for invalid queries, got nil")
 	}
 
-	errMsg := "glimt: parse duplicate_names.sql: duplicate query name \"listUsers\""
+	errMsg := "glimt: parse testdata/invalid_queries/duplicate_names.sql: line 4: duplicate query name \"listUsers\""
 	assertErrorContains(t, err, errMsg)
 }
 
@@ -234,7 +239,7 @@ func TestRegistry_LoadFileFSDuplicate(t *testing.T) {
 		t.Fatal("expected error for duplicate query names in FS, got nil")
 	}
 
-	errMsg := "glimt: parse duplicate_names.sql: duplicate query name \"listUsers\""
+	errMsg := "glimt: parse duplicate_names.sql: line 4: duplicate query name \"listUsers\""
 	assertErrorContains(t, err, errMsg)
 }
 
@@ -247,6 +252,7 @@ func TestRegistry_LoadFS(t *testing.T) {
 	}
 
 	expectedQueries := []string{
+		"countUsersByStatus",
 		"createOrdersTable",
 		"createProductsTable",
 		"createUsersTable",
@@ -297,7 +303,7 @@ func TestRegistry_LoadFSInvalidQueries(t *testing.T) {
 		t.Fatal("expected error for invalid queries in FS, got nil")
 	}
 
-	errMsg := "glimt: parse duplicate_names.sql: duplicate query name \"listUsers\""
+	errMsg := "glimt: parse duplicate_names.sql: line 4: duplicate query name \"listUsers\""
 	assertErrorContains(t, err, errMsg)
 }
 
@@ -340,7 +346,9 @@ func TestRegistry_Queries(t *testing.T) {
 	}
 
 	gotQueries := reg.Queries()
-	expectedQueries := []string{"createUsersTable", "dropUsersTable", "insertUser", "listActiveUsers", "listUsers"}
+	expectedQueries := []string{
+		"countUsersByStatus", "createUsersTable", "dropUsersTable", "insertUser", "listActiveUsers", "listUsers",
+	}
 
 	if len(gotQueries) != len(expectedQueries) {
 		t.Fatalf("expected %d queries, got %d", len(expectedQueries), len(gotQueries))
@@ -371,4 +379,80 @@ func TestRegistry_DynamicFiltering(t *testing.T) {
 	wantSQL := "SELECT * FROM users WHERE status = $1 AND created_at > $2 ORDER BY created_at DESC LIMIT $3"
 	assertSQL(t, sql, wantSQL)
 	assertArgs(t, args, []any{"active", "2023-01-01", 10})
+}
+
+func TestRegistry_Add(t *testing.T) {
+	reg := NewRegistry(DialectPostgres)
+
+	err := reg.Add("activeUsers", "SELECT * FROM users -- only active\nWHERE deleted_at IS NULL;")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	sql, args := reg.MustGet("activeUsers").Limit(5).Build()
+	assertSQL(t, sql, "SELECT * FROM users\nWHERE deleted_at IS NULL LIMIT $1")
+	assertArgs(t, args, []any{5})
+}
+
+func TestRegistry_AddErrors(t *testing.T) {
+	tests := []struct {
+		name    string
+		query   string
+		sql     string
+		wantErr string
+	}{
+		{"invalid name", "bad name", "SELECT 1", `glimt: add: invalid query name "bad name"`},
+		{"empty body", "empty", "  -- nothing here\n", "glimt: add empty: empty query body"},
+		{"duplicate", "existing", "SELECT 2", `glimt: duplicate query name "existing" in Add`},
+		{"native placeholder", "native", "SELECT * FROM t WHERE id = $1", `glimt: add native: line 1: native placeholder "$1": use ? instead`},
+		{"annotation", "annotated", "-- :name other\nSELECT 1", `glimt: add annotated: line 1: unexpected annotation ":name"`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reg := NewRegistry(DialectPostgres)
+			if err := reg.Add("existing", "SELECT 1"); err != nil {
+				t.Fatalf("setup: %v", err)
+			}
+
+			assertErrorContains(t, reg.Add(tt.query, tt.sql), tt.wantErr)
+		})
+	}
+}
+
+func TestRegistry_LoadIsAllOrNothing(t *testing.T) {
+	reg := NewRegistry(DialectPostgres)
+	if err := reg.Add("listUsers", "SELECT 1"); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+
+	err := reg.LoadFile("testdata/queries/users.sql")
+	assertErrorContains(t, err, `glimt: duplicate query name "listUsers" in testdata/queries/users.sql`)
+
+	if reg.Has("insertUser") {
+		t.Error("a failed load must not add any of the file's queries")
+	}
+}
+
+func TestRegistry_AdHocQueryIsSanitized(t *testing.T) {
+	reg := NewRegistry(DialectPostgres)
+
+	// Without sanitizing, the appended WHERE would land inside the line comment
+	// and the owner filter would silently disappear.
+	sql, args := reg.Query("SELECT * FROM docs -- every document").
+		Where(Eq("owner_id", 7)).
+		Build()
+	assertSQL(t, sql, "SELECT * FROM docs WHERE owner_id = $1")
+	assertArgs(t, args, []any{7})
+
+	sql, _ = reg.Query("SELECT * FROM docs;").Where(Eq("owner_id", 7)).Build()
+	assertSQL(t, sql, "SELECT * FROM docs WHERE owner_id = $1")
+}
+
+func TestRegistry_AdHocUnterminatedIsKeptAsWritten(t *testing.T) {
+	reg := NewRegistry(DialectPostgres)
+
+	// The database reports the syntax error; glimt does not guess.
+	sql, _ := reg.Query("SELECT 'oops FROM docs").Build()
+	assertSQL(t, sql, "SELECT 'oops FROM docs")
 }

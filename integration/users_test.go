@@ -23,15 +23,7 @@ type User struct {
 
 func insertUser(t *testing.T, name, email, status string, age int) int {
 	t.Helper()
-	sql, args := testState.registry.MustGet("insertUser").Args(name, email, status, age).Build()
-
-	var id int
-	err := testState.db.QueryRow(sql, args...).Scan(&id)
-	if err != nil {
-		t.Fatalf("insertUser: %v", err)
-	}
-	_ = args
-	return id
+	return insertID(t, "insertUser", name, email, status, age)
 }
 
 func scanUser(t *testing.T, rows interface{ Scan(...any) error }) User {
@@ -340,5 +332,136 @@ func TestUser_NotInFilter(t *testing.T) {
 	n := countRows(t, sql, args...)
 	if n != 1 {
 		t.Errorf("count: got %d, want 1", n)
+	}
+}
+
+func TestUser_InTypedSlice(t *testing.T) {
+	t.Cleanup(func() { cleanUsers(t) })
+
+	insertUser(t, "Alice", "alice@example.com", "active", 30)
+	insertUser(t, "Bob", "bob@example.com", "inactive", 25)
+	insertUser(t, "Charlie", "charlie@example.com", "suspended", 40)
+
+	statuses := []string{"active", "suspended"}
+	sql, args := testState.registry.MustGet("listUsers").
+		Where(gl.In("status", statuses...)).
+		Build()
+
+	n := countRows(t, sql, args...)
+	if n != 2 {
+		t.Errorf("count: got %d, want 2", n)
+	}
+}
+
+func TestUser_EmptyInMatchesNothing(t *testing.T) {
+	t.Cleanup(func() { cleanUsers(t) })
+
+	insertUser(t, "Alice", "alice@example.com", "active", 30)
+	insertUser(t, "Bob", "bob@example.com", "active", 25)
+
+	var allowed []int
+	sql, args := testState.registry.MustGet("listUsers").
+		Where(gl.In("id", allowed...)).
+		Build()
+
+	n := countRows(t, sql, args...)
+	if n != 0 {
+		t.Errorf("count: got %d, want 0", n)
+	}
+}
+
+func TestUser_OptionalFiltersSkipped(t *testing.T) {
+	t.Cleanup(func() { cleanUsers(t) })
+
+	insertUser(t, "Alice", "alice@example.com", "active", 30)
+	insertUser(t, "Bob", "bob@example.com", "inactive", 25)
+
+	status, minAge := "", 0
+	sql, args := testState.registry.MustGet("listUsers").
+		Where(
+			gl.If(status != "", gl.Eq("status", status)),
+			gl.If(minAge > 0, gl.Gte("age", minAge)),
+			gl.And(),
+		).
+		Build()
+
+	n := countRows(t, sql, args...)
+	if n != 2 {
+		t.Errorf("count: got %d, want 2", n)
+	}
+}
+
+func TestUser_ExcludeEmptyNotInFailsClosed(t *testing.T) {
+	t.Cleanup(func() { cleanUsers(t) })
+
+	insertUser(t, "Alice", "alice@example.com", "active", 30)
+
+	var denied []string
+	sql, args := testState.registry.MustGet("listUsers").
+		Exclude(gl.NotIn("status", denied...)).
+		Build()
+
+	n := countRows(t, sql, args...)
+	if n != 0 {
+		t.Errorf("count: got %d, want 0", n)
+	}
+}
+
+func TestUser_MarkerKeepsFixedFilterAndGroupBy(t *testing.T) {
+	t.Cleanup(func() { cleanUsers(t) })
+
+	insertUser(t, "Alice", "alice@example.com", "active", 30)
+	insertUser(t, "Bob", "bob@example.com", "active", 17)
+	insertUser(t, "Charlie", "charlie@example.com", "inactive", 40)
+
+	sql, args := testState.registry.MustGet("countUsersByStatus").
+		Where(gl.Gte("age", 18)).
+		OrderBy("status").
+		Build()
+
+	rows, err := testState.db.Query(sql, args...)
+	if err != nil {
+		t.Fatalf("query: %v", err)
+	}
+	defer rows.Close()
+
+	got := map[string]int{}
+	for rows.Next() {
+		var status string
+		var total int
+		if err := rows.Scan(&status, &total); err != nil {
+			t.Fatalf("scan: %v", err)
+		}
+		got[status] = total
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("rows: %v", err)
+	}
+
+	if len(got) != 2 || got["active"] != 1 || got["inactive"] != 1 {
+		t.Errorf("counts: got %v, want map[active:1 inactive:1]", got)
+	}
+}
+
+func TestUser_ContainsMatchesWildcardsLiterally(t *testing.T) {
+	t.Cleanup(func() { cleanUsers(t) })
+
+	insertUser(t, "Promo 100%", "promo@example.com", "active", 30)
+	insertUser(t, "Promo 1000", "promo1000@example.com", "active", 30)
+	insertUser(t, "under_score", "under@example.com", "active", 30)
+	insertUser(t, "underXscore", "underx@example.com", "active", 30)
+
+	for _, tc := range []struct {
+		pred gl.Predicate
+		want int
+	}{
+		{gl.Contains("name", "100%"), 1},
+		{gl.StartsWith("name", "under_"), 1},
+		{gl.EndsWith("email", "@example.com"), 4},
+	} {
+		sql, args := testState.registry.MustGet("listUsers").Where(tc.pred).Build()
+		if n := countRows(t, sql, args...); n != tc.want {
+			t.Errorf("%s %v: got %d rows, want %d", sql, args, n, tc.want)
+		}
 	}
 }

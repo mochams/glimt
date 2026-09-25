@@ -3,9 +3,10 @@
 
 .DEFAULT_GOAL := test
 
-.PHONY: fmt vet test clean lint integration
+.PHONY: fmt vet test clean lint integration fuzz
 
 TEST_FLAGS ?=
+FUZZTIME ?= 30s
 
 fmt:
 	go fmt ./...
@@ -25,3 +26,7 @@ lint:
 
 integration:
 	cd integration && make test
+
+fuzz:
+	go test -run '^$$' -fuzz '^FuzzLex$$' -fuzztime $(FUZZTIME) .
+	go test -run '^$$' -fuzz '^FuzzWritePlaceholders$$' -fuzztime $(FUZZTIME) .

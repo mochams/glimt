@@ -28,3 +28,10 @@ WITH active_users AS (
     WHERE deleted_at IS NULL
 )
 SELECT * FROM active_users
+
+-- :name countUsersByStatus
+-- Fixed filter in SQL, dynamic filters from the builder at the marker.
+SELECT status, COUNT(*) AS total
+FROM users
+WHERE deleted_at IS NULL /* :and */
+GROUP BY status

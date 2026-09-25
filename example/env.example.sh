@@ -1,1 +1,0 @@
-CGO_ENABLED=1

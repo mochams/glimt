@@ -63,32 +63,18 @@ func TestWritePlaceholders(t *testing.T) {
 			want:    "UPDATE users SET name = $1, email = $2 WHERE id = $3",
 		},
 
-		// --- DialectSQLServer ---
+		// --- DialectSQLite (no rewrite) ---
 		{
-			name:    "sqlserver: single placeholder",
+			name:    "sqlite: no rewrite",
 			sql:     "SELECT * FROM users WHERE id = ?",
-			dialect: DialectSQLServer,
-			want:    "SELECT * FROM users WHERE id = @p1",
+			dialect: DialectSQLite,
+			want:    "SELECT * FROM users WHERE id = ?",
 		},
 		{
-			name:    "sqlserver: multiple placeholders",
+			name:    "sqlite: multiple placeholders unchanged",
 			sql:     "SELECT * FROM users WHERE id = ? AND status = ?",
-			dialect: DialectSQLServer,
-			want:    "SELECT * FROM users WHERE id = @p1 AND status = @p2",
-		},
-
-		// --- DialectOracle ---
-		{
-			name:    "oracle: single placeholder",
-			sql:     "SELECT * FROM users WHERE id = ?",
-			dialect: DialectOracle,
-			want:    "SELECT * FROM users WHERE id = :1",
-		},
-		{
-			name:    "oracle: multiple placeholders",
-			sql:     "SELECT * FROM users WHERE id = ? AND status = ?",
-			dialect: DialectOracle,
-			want:    "SELECT * FROM users WHERE id = :1 AND status = :2",
+			dialect: DialectSQLite,
+			want:    "SELECT * FROM users WHERE id = ? AND status = ?",
 		},
 
 		// --- string literals ---
@@ -137,6 +123,52 @@ func TestWritePlaceholders(t *testing.T) {
 			want:    `SELECT * FROM "what?" WHERE id = $1`,
 		},
 
+		// --- ?? escape ---
+		{
+			name:    "postgres: ?? becomes a literal JSONB operator",
+			sql:     "SELECT * FROM t WHERE data ?? 'k' AND id = ?",
+			dialect: DialectPostgres,
+			want:    "SELECT * FROM t WHERE data ? 'k' AND id = $1",
+		},
+		{
+			name:    "postgres: ??| becomes ?|",
+			sql:     "SELECT * FROM t WHERE data ??| array['a', 'b'] AND id = ?",
+			dialect: DialectPostgres,
+			want:    "SELECT * FROM t WHERE data ?| array['a', 'b'] AND id = $1",
+		},
+		{
+			name:    "mysql: ?? becomes a literal question mark",
+			sql:     "SELECT ?? AS q, ? AS p",
+			dialect: DialectMySQL,
+			want:    "SELECT ? AS q, ? AS p",
+		},
+		{
+			name:    "sqlite: ?? inside a string literal is kept",
+			sql:     "SELECT '??' WHERE id = ?",
+			dialect: DialectSQLite,
+			want:    "SELECT '??' WHERE id = ?",
+		},
+
+		// --- dialect-aware quoting ---
+		{
+			name:    "postgres: ? inside a dollar-quoted body is ignored",
+			sql:     "SELECT $$it's ?$$, ?",
+			dialect: DialectPostgres,
+			want:    "SELECT $$it's ?$$, $1",
+		},
+		{
+			name:    "postgres: E-string backslash escape",
+			sql:     `SELECT E'it\'s?' AND id = ?`,
+			dialect: DialectPostgres,
+			want:    `SELECT E'it\'s?' AND id = $1`,
+		},
+		{
+			name:    "mysql: backslash escape keeps ?? inside the literal",
+			sql:     `SELECT 'it\'s ??', ??`,
+			dialect: DialectMySQL,
+			want:    `SELECT 'it\'s ??', ?`,
+		},
+
 		// --- edge cases ---
 		{
 			name:    "empty string",
@@ -161,18 +193,6 @@ func TestWritePlaceholders(t *testing.T) {
 			sql:     "INSERT INTO users VALUES ($1, $2)",
 			dialect: DialectPostgres,
 			want:    "INSERT INTO users VALUES ($1, $2)",
-		},
-		{
-			name:    "sqlserver: placeholder inside single-quoted string ignored",
-			sql:     "SELECT * FROM users WHERE name = 'what?' AND id = ?",
-			dialect: DialectSQLServer,
-			want:    "SELECT * FROM users WHERE name = 'what?' AND id = @p1",
-		},
-		{
-			name:    "oracle: placeholder inside single-quoted string ignored",
-			sql:     "SELECT * FROM users WHERE name = 'what?' AND id = ?",
-			dialect: DialectOracle,
-			want:    "SELECT * FROM users WHERE name = 'what?' AND id = :1",
 		},
 		{
 			name:    "backtick quoted identifier ignored (MySQL style)",

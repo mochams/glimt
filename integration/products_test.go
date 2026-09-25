@@ -23,12 +23,7 @@ type Product struct {
 
 func insertProduct(t *testing.T, name, category, status string, price float64, stock int) int {
 	t.Helper()
-	sql, _ := testState.registry.MustGet("insertProduct").Build()
-	var id int
-	if err := testState.db.QueryRow(sql, name, price, stock, category, status).Scan(&id); err != nil {
-		t.Fatalf("insertProduct: %v", err)
-	}
-	return id
+	return insertID(t, "insertProduct", name, price, stock, category, status)
 }
 
 func scanProduct(t *testing.T, rows interface{ Scan(...any) error }) Product {
