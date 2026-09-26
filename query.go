@@ -14,11 +14,17 @@ type Query struct {
 	where   []Predicate
 	groupBy []string
 	having  []Predicate
-	orderBy []string
+	orderBy []orderTerm
 	limit   *int
 	offset  *int
 	dialect Dialect
 	args    []any
+}
+
+// orderTerm is one ORDER BY expression and the arguments of its placeholders.
+type orderTerm struct {
+	expr string
+	args []any
 }
 
 // NewQuery creates a new Query from ad-hoc SQL for the given dialect.
@@ -29,8 +35,10 @@ func NewQuery(sql string, dialect Dialect) *Query {
 	tpl, err := parseSQL(sql, dialect, false)
 	if err != nil {
 		// Unterminated quotes or comments: keep the SQL as written so the
-		// database reports the syntax error.
-		tpl = &template{parts: []string{strings.TrimSpace(sql)}, params: []int{0}}
+		// database reports the syntax error. The newline ends any trailing
+		// line comment, which the lexer could not find, so it cannot swallow
+		// the clauses appended after it.
+		tpl = &template{parts: []string{strings.TrimSpace(sql) + "\n"}, params: []int{0}}
 	}
 
 	return &Query{tpl: tpl, dialect: dialect}
@@ -71,9 +79,32 @@ func (q *Query) Having(preds ...Predicate) *Query {
 }
 
 // OrderBy adds columns to the ORDER BY clause of the query.
-// It returns the Query for chaining.
+// Blank columns are ignored. It returns the Query for chaining.
 func (q *Query) OrderBy(cols ...string) *Query {
-	q.orderBy = append(q.orderBy, cols...)
+	q.orderBy = slices.Grow(q.orderBy, len(cols))
+
+	for _, col := range cols {
+		q.OrderByExpr(col)
+	}
+
+	return q
+}
+
+// OrderByExpr adds an ORDER BY expression with bound arguments, such as a
+// relevance rank computed from a search term:
+//
+//	q.OrderByExpr("ts_rank(search_vector, plainto_tsquery(?)) DESC", term)
+//
+// Include the direction in expr, and pass request input only as args, never
+// as part of expr. A blank expr is ignored. Terms from OrderBy and OrderByExpr
+// render in the order they were added. It returns the Query for chaining.
+//
+// With SELECT DISTINCT, Postgres and MySQL require an ORDER BY expression to
+// appear in the select list. Over a UNION, ORDER BY can only use output column names.
+func (q *Query) OrderByExpr(expr string, args ...any) *Query {
+	if strings.TrimSpace(expr) != "" {
+		q.orderBy = append(q.orderBy, orderTerm{expr: expr, args: args})
+	}
 
 	return q
 }
@@ -119,19 +150,55 @@ func (q *Query) Build() (string, []any) {
 // It does not rewrite placeholders for the dialect, and leaves "??" escapes as they are.
 // Useful if you want to handle placeholders yourself.
 func (q *Query) RawBuild() (string, []any) {
-	b := &sqlBuilder{}
-	b.args = make([]any, 0, 10)
-	b.grow(256)
-
+	b := q.newBuilder()
 	q.build(b)
 
 	return b.string(), b.args
+}
+
+// BuildCount constructs a query that counts the rows this query matches, for
+// pagination totals:
+//
+//	SELECT COUNT(*) FROM (<query>) AS t
+//
+// The query's ORDER BY, LIMIT and OFFSET are left out, along with their
+// arguments, so one filtered query yields both a page and its total. Calling
+// it before or after Limit gives the same result. Placeholders are rewritten
+// like Build.
+//
+// A query with GROUP BY counts groups. BuildCount is meant for SELECT queries.
+// On MySQL, a SELECT * over a join can produce duplicate column names, which a
+// derived table rejects ("Duplicate column name"); list the columns instead.
+func (q *Query) BuildCount() (string, []any) {
+	b := q.newBuilder()
+	b.write("SELECT COUNT(*) FROM (")
+	q.buildFiltered(b)
+	b.write(") AS t")
+
+	return writePlaceholders(b.string(), q.dialect), b.args
+}
+
+// newBuilder returns a builder for this query's dialect, sized for a typical query.
+func (q *Query) newBuilder() *sqlBuilder {
+	b := &sqlBuilder{dialect: q.dialect}
+	b.args = make([]any, 0, 10)
+	b.grow(256)
+
+	return b
 }
 
 // build writes the query into b with "?" placeholders.
 // Subquery predicates use it to render an inner query into the outer builder,
 // so the outer Build numbers every placeholder once.
 func (q *Query) build(b *sqlBuilder) {
+	q.buildFiltered(b)
+	q.buildOrderBy(b)
+	q.buildPage(b)
+}
+
+// buildFiltered writes the base SQL, WHERE, GROUP BY and HAVING: everything
+// that decides which rows match, without ordering or pagination.
+func (q *Query) buildFiltered(b *sqlBuilder) {
 	tpl := q.tpl
 	if tpl == nil { // zero Query: no base SQL
 		tpl = &template{parts: []string{""}, params: []int{0}}
@@ -145,8 +212,6 @@ func (q *Query) build(b *sqlBuilder) {
 
 	q.buildGroupBy(b)
 	q.buildHaving(b)
-	q.buildOrderBy(b)
-	q.buildPage(b)
 }
 
 // buildBase writes the base SQL. Args fill the placeholders of each part in
@@ -207,34 +272,33 @@ func (q *Query) buildHaving(b *sqlBuilder) {
 	b.clause(" HAVING ", " AND ", q.having)
 }
 
-// buildOrderBy adds the ORDER BY clause to the query if any order by columns are set.
+// buildOrderBy adds the ORDER BY clause to the query if any term is set.
+// Each term's args follow the WHERE, GROUP BY and HAVING args, in textual order.
 func (q *Query) buildOrderBy(b *sqlBuilder) {
-	switch len(q.orderBy) {
-	case 0: // nothing
-	default:
-		b.write(" ORDER BY ")
-
-		for i := range len(q.orderBy) {
-			if i > 0 {
-				b.write(", ")
-			}
-
-			b.write(q.orderBy[i])
+	for i, term := range q.orderBy {
+		if i == 0 {
+			b.write(" ORDER BY ")
+		} else {
+			b.write(", ")
 		}
+
+		b.write(term.expr)
+		b.args = append(b.args, term.args...)
 	}
 }
 
 // buildPage adds the LIMIT and OFFSET clauses to the query if they are set.
 // MySQL and SQLite reject OFFSET without LIMIT, so an offset-only query gets
-// the dialect's "no limit" form.
+// the dialect's "no limit" form. The builder's dialect is used, so a subquery
+// follows the query it is rendered into.
 func (q *Query) buildPage(b *sqlBuilder) {
 	switch {
 	case q.limit != nil:
 		b.write(" LIMIT ?")
 		b.arg(*q.limit)
-	case q.offset != nil && q.dialect == DialectMySQL:
+	case q.offset != nil && b.dialect == DialectMySQL:
 		b.write(" LIMIT 18446744073709551615")
-	case q.offset != nil && q.dialect == DialectSQLite:
+	case q.offset != nil && b.dialect == DialectSQLite:
 		b.write(" LIMIT -1")
 	}
 
@@ -330,9 +394,12 @@ func sortExpr(field string, allowed map[string]string) (expr, name string, err e
 
 // sqlBuilder is a helper type for building SQL strings and collecting arguments.
 // It uses a byte slice so output can be rolled back when a predicate renders nothing.
+// dialect lets predicates render dialect-specific SQL; subqueries share the
+// outer query's builder, and so its dialect.
 type sqlBuilder struct {
-	buf  []byte
-	args []any
+	buf     []byte
+	args    []any
+	dialect Dialect
 }
 
 // write appends a string to the SQL being built.

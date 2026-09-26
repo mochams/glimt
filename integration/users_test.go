@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -458,6 +459,92 @@ func TestUser_ContainsMatchesWildcardsLiterally(t *testing.T) {
 		{gl.Contains("name", "100%"), 1},
 		{gl.StartsWith("name", "under_"), 1},
 		{gl.EndsWith("email", "@example.com"), 4},
+	} {
+		sql, args := testState.registry.MustGet("listUsers").Where(tc.pred).Build()
+		if n := countRows(t, sql, args...); n != tc.want {
+			t.Errorf("%s %v: got %d rows, want %d", sql, args, n, tc.want)
+		}
+	}
+}
+
+func TestUser_BuildCountMatchesRows(t *testing.T) {
+	t.Cleanup(func() { cleanUsers(t) })
+
+	insertUser(t, "Alice", "alice@example.com", "active", 30)
+	insertUser(t, "Bob", "bob@example.com", "active", 25)
+	insertUser(t, "Charlie", "charlie@example.com", "active", 40)
+	insertUser(t, "Dave", "dave@example.com", "inactive", 35)
+
+	q := testState.registry.MustGet("listUsers").
+		Where(gl.Eq("status", "active")).
+		OrderByExpr("CASE WHEN email = ? THEN 0 ELSE 1 END", "charlie@example.com").
+		OrderBy("id").
+		Limit(2).
+		Offset(1)
+
+	countSQL, countArgs := q.BuildCount()
+
+	var total int
+	if err := testState.db.QueryRow(countSQL, countArgs...).Scan(&total); err != nil {
+		t.Fatalf("count: %v\n%s %v", err, countSQL, countArgs)
+	}
+
+	if total != 3 {
+		t.Errorf("total: got %d, want 3", total)
+	}
+
+	pageSQL, pageArgs := q.Build()
+	if n := countRows(t, pageSQL, pageArgs...); n != 2 {
+		t.Errorf("page: got %d rows, want 2", n)
+	}
+}
+
+func TestUser_OrderByExprPinsRowFirst(t *testing.T) {
+	t.Cleanup(func() { cleanUsers(t) })
+
+	insertUser(t, "Alice", "alice@example.com", "active", 30)
+	insertUser(t, "Bob", "bob@example.com", "active", 25)
+	pinned := insertUser(t, "Charlie", "charlie@example.com", "active", 40)
+
+	sql, args := testState.registry.MustGet("listUsers").
+		OrderByExpr("CASE WHEN id = ? THEN 0 ELSE 1 END", pinned).
+		OrderBy("name").
+		Build()
+
+	rows, err := testState.db.Query(sql, args...)
+	if err != nil {
+		t.Fatalf("query: %v", err)
+	}
+	defer rows.Close()
+
+	var order []string
+	for rows.Next() {
+		u := scanUser(t, rows)
+		order = append(order, u.Name)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("rows: %v", err)
+	}
+
+	if want := []string{"Charlie", "Alice", "Bob"}; strings.Join(order, ",") != strings.Join(want, ",") {
+		t.Errorf("order: got %v, want %v", order, want)
+	}
+}
+
+func TestUser_CaseInsensitiveSearch(t *testing.T) {
+	t.Cleanup(func() { cleanUsers(t) })
+
+	insertUser(t, "Alice Smith", "alice@example.com", "active", 30)
+	insertUser(t, "ALICE Cooper", "acooper@EXAMPLE.com", "active", 40)
+	insertUser(t, "Bob", "bob@example.com", "active", 25)
+
+	for _, tc := range []struct {
+		pred gl.Predicate
+		want int
+	}{
+		{gl.IContains("name", "alice"), 2},
+		{gl.IStartsWith("name", "ALICE"), 2},
+		{gl.IEndsWith("email", "@example.COM"), 3},
 	} {
 		sql, args := testState.registry.MustGet("listUsers").Where(tc.pred).Build()
 		if n := countRows(t, sql, args...); n != tc.want {

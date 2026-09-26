@@ -151,8 +151,8 @@ filter when its condition is false, and `WHERE` is omitted when no filter applie
 where := []gl.Predicate{
     gl.If(status != "", gl.Eq("status", status)),
     gl.If(len(roles) > 0, gl.In("role", roles...)),
-    // Contains escapes % and _ in user input, so they match literally.
-    gl.If(search != "", gl.Or(gl.Contains("name", search), gl.Contains("email", search))),
+    // IContains ignores case and escapes % and _ in user input, so they match literally.
+    gl.If(search != "", gl.Or(gl.IContains("name", search), gl.IContains("email", search))),
 }
 
 sql, args := reg.MustGet("listUsers").Where(where...).Limit(20).Build()
@@ -165,10 +165,6 @@ if req.MinAge != nil {
     where = append(where, gl.Gte("age", *req.MinAge))
 }
 ```
-
-`In` with an empty list matches no rows, so an access filter such as
-`gl.In("org_id", allowed...)` never widens to every row. That is why the roles
-filter above is wrapped in `gl.If`.
 
 To keep a fixed `WHERE`, `GROUP BY`, `UNION` or `RETURNING` in the SQL file,
 mark where the filters go. Markers are comments, so the file still runs as-is
@@ -230,6 +226,23 @@ if err != nil {
 }
 
 q.OrderBy(append(order, "o.id")...) // "-created" → ORDER BY o.created_at DESC, o.id
+```
+
+For an ordering that needs a value, such as pinning one row to the top, use
+`OrderByExpr` and pass the value as an argument:
+
+```go
+q.OrderByExpr("CASE WHEN o.id = ? THEN 0 ELSE 1 END", pinnedID)
+```
+
+One filtered query gives both a page and its total. `BuildCount` leaves out
+`ORDER BY`, `LIMIT` and `OFFSET`:
+
+```go
+q := reg.MustGet("listOrders").Args(orgID).Where(where...).OrderBy(order...)
+
+page, pageArgs := q.Limit(20).Offset(40).Build()
+total, totalArgs := q.BuildCount() // SELECT COUNT(*) FROM (...) AS t
 ```
 
 Glimt automatically writes placeholders for the target database.

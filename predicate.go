@@ -312,9 +312,9 @@ var likeEscaper = strings.NewReplacer("!", "!!", "%", "!%", "_", "!_")
 // creates "name LIKE ? ESCAPE '!'" with argument "%50!%%".
 //
 // LIKE is case-sensitive on Postgres; for case-insensitive search, use
-// Contains("lower(name)", strings.ToLower(s)). An empty s matches every non-NULL value.
+// IContains. An empty s matches every non-NULL value.
 func Contains(col, s string) Predicate {
-	return likeEscaped(col, "%"+likeEscaper.Replace(s)+"%")
+	return likeEscaped(col, "%"+likeEscaper.Replace(s)+"%", false)
 }
 
 // StartsWith creates a predicate matching rows where col starts with s.
@@ -322,7 +322,7 @@ func Contains(col, s string) Predicate {
 // Example usage: StartsWith("sku", "AB_")
 // creates "sku LIKE ? ESCAPE '!'" with argument "AB!_%".
 func StartsWith(col, s string) Predicate {
-	return likeEscaped(col, likeEscaper.Replace(s)+"%")
+	return likeEscaped(col, likeEscaper.Replace(s)+"%", false)
 }
 
 // EndsWith creates a predicate matching rows where col ends with s.
@@ -330,14 +330,52 @@ func StartsWith(col, s string) Predicate {
 // Example usage: EndsWith("email", "@example.com")
 // creates "email LIKE ? ESCAPE '!'" with argument "%@example.com".
 func EndsWith(col, s string) Predicate {
-	return likeEscaped(col, "%"+likeEscaper.Replace(s))
+	return likeEscaped(col, "%"+likeEscaper.Replace(s), false)
 }
 
-// likeEscaped writes "col LIKE ? ESCAPE '!'" with the escaped pattern as its argument.
-func likeEscaped(col, pattern string) Predicate {
+// IContains creates a case-insensitive Contains. Wildcards in s match literally.
+// Example usage: IContains("name", "doe")
+// creates "name ILIKE ? ESCAPE '!'" on Postgres and "name LIKE ? ESCAPE '!'"
+// on MySQL and SQLite, with argument "%doe%".
+//
+// Postgres uses ILIKE, which a pg_trgm GIN index can serve. On MySQL and
+// SQLite, LIKE already ignores case in the common case: MySQL follows the
+// column's collation (the default _ci collations ignore case, and _ai_ci ones
+// also ignore accents; _bin and _cs collations do not), and SQLite ignores
+// case for ASCII letters only.
+func IContains(col, s string) Predicate {
+	return likeEscaped(col, "%"+likeEscaper.Replace(s)+"%", true)
+}
+
+// IStartsWith creates a case-insensitive StartsWith. Wildcards in s match literally.
+// It renders like IContains; see IContains for how each dialect handles case.
+// Example usage: IStartsWith("sku", "ab_")
+// creates "sku ILIKE ? ESCAPE '!'" on Postgres with argument "ab!_%".
+func IStartsWith(col, s string) Predicate {
+	return likeEscaped(col, likeEscaper.Replace(s)+"%", true)
+}
+
+// IEndsWith creates a case-insensitive EndsWith. Wildcards in s match literally.
+// It renders like IContains; see IContains for how each dialect handles case.
+// Example usage: IEndsWith("email", "@Example.com")
+// creates "email ILIKE ? ESCAPE '!'" on Postgres with argument "%@Example.com".
+func IEndsWith(col, s string) Predicate {
+	return likeEscaped(col, "%"+likeEscaper.Replace(s), true)
+}
+
+// likeEscaped writes "col LIKE ? ESCAPE '!'" with the escaped pattern as its
+// argument. With ignoreCase, Postgres gets ILIKE; MySQL and SQLite keep LIKE,
+// which ignores case under their defaults.
+func likeEscaped(col, pattern string, ignoreCase bool) Predicate {
 	return func(b *sqlBuilder) {
 		b.write(col)
-		b.write(" LIKE ? ESCAPE '!'")
+
+		if ignoreCase && b.dialect == DialectPostgres {
+			b.write(" ILIKE ? ESCAPE '!'")
+		} else {
+			b.write(" LIKE ? ESCAPE '!'")
+		}
+
 		b.arg(pattern)
 	}
 }
