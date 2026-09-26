@@ -3,6 +3,7 @@ package glimt
 import (
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -137,6 +138,47 @@ func TestQueryBuild(t *testing.T) {
 			query:    (&Query{}).Where(Eq("a", 1)),
 			wantSQL:  " WHERE a = $1",
 			wantArgs: []any{1},
+		},
+
+		// --- ORDER BY expressions ---
+		{
+			name: "OrderByExpr args follow WHERE args and precede LIMIT",
+			query: NewQuery("SELECT * FROM docs", DialectPostgres).
+				Where(Eq("org_id", 7)).
+				OrderByExpr("ts_rank(search_vector, to_tsquery(?)) DESC", "cats").
+				OrderBy("id").
+				Limit(10),
+			wantSQL:  "SELECT * FROM docs WHERE org_id = $1 ORDER BY ts_rank(search_vector, to_tsquery($2)) DESC, id LIMIT $3",
+			wantArgs: []any{7, "cats", 10},
+		},
+		{
+			name: "OrderBy and OrderByExpr keep call order",
+			query: NewQuery("SELECT * FROM users", DialectPostgres).
+				OrderBy("status").
+				OrderByExpr("CASE WHEN id = ? THEN 0 ELSE 1 END", 42).
+				OrderBy("name ASC", "id"),
+			wantSQL:  "SELECT * FROM users ORDER BY status, CASE WHEN id = $1 THEN 0 ELSE 1 END, name ASC, id",
+			wantArgs: []any{42},
+		},
+		{
+			name: "OrderByExpr args follow HAVING args",
+			query: NewQuery("SELECT status, COUNT(*) FROM users", DialectPostgres).
+				GroupBy("status").
+				Having(Gt("COUNT(*)", 1)).
+				OrderByExpr("COUNT(*) > ? DESC", 10),
+			wantSQL:  "SELECT status, COUNT(*) FROM users GROUP BY status HAVING COUNT(*) > $1 ORDER BY COUNT(*) > $2 DESC",
+			wantArgs: []any{1, 10},
+		},
+		{
+			name:    "blank order terms are ignored",
+			query:   NewQuery("SELECT * FROM users", DialectPostgres).OrderBy("", "  ").OrderByExpr(" ", 1),
+			wantSQL: "SELECT * FROM users",
+		},
+		{
+			name:     "mysql OrderByExpr keeps ? placeholders",
+			query:    NewQuery("SELECT * FROM users", DialectMySQL).OrderByExpr("FIELD(status, ?, ?)", "active", "idle"),
+			wantSQL:  "SELECT * FROM users ORDER BY FIELD(status, ?, ?)",
+			wantArgs: []any{"active", "idle"},
 		},
 
 		// --- subqueries ---
@@ -499,4 +541,156 @@ func TestParseSort_withQuery(t *testing.T) {
 		OrderBy(append(order, "id")...).
 		Build()
 	assertSQL(t, sql, "SELECT * FROM orders ORDER BY created_at DESC, id")
+}
+
+func TestQuery_BuildCount(t *testing.T) {
+	tests := []struct {
+		name     string
+		query    *Query
+		wantSQL  string
+		wantArgs []any
+	}{
+		{
+			name: "drops ORDER BY, LIMIT and OFFSET with their args",
+			query: NewQuery("SELECT * FROM users", DialectPostgres).
+				Where(Eq("status", "active")).
+				OrderByExpr("CASE WHEN id = ? THEN 0 ELSE 1 END", 42).
+				OrderBy("id").
+				Limit(10).
+				Offset(20),
+			wantSQL:  "SELECT COUNT(*) FROM (SELECT * FROM users WHERE status = $1) AS t",
+			wantArgs: []any{"active"},
+		},
+		{
+			name: "keeps a marker and its Args",
+			query: NewQuery("SELECT * FROM users WHERE org_id = ? /* :and */", DialectPostgres).
+				Args(7).
+				Where(Eq("role", "admin")).
+				Limit(5),
+			wantSQL:  "SELECT COUNT(*) FROM (SELECT * FROM users WHERE org_id = $1 AND role = $2) AS t",
+			wantArgs: []any{7, "admin"},
+		},
+		{
+			name: "counts groups",
+			query: NewQuery("SELECT status, COUNT(*) FROM users", DialectPostgres).
+				GroupBy("status").
+				Having(Gt("COUNT(*)", 1)).
+				OrderBy("status"),
+			wantSQL:  "SELECT COUNT(*) FROM (SELECT status, COUNT(*) FROM users GROUP BY status HAVING COUNT(*) > $1) AS t",
+			wantArgs: []any{1},
+		},
+		{
+			name: "keeps a subquery's own LIMIT, which is part of the filter",
+			query: NewQuery("SELECT * FROM users", DialectPostgres).
+				Where(InQuery("id", NewQuery("SELECT user_id FROM logins", DialectPostgres).OrderBy("at DESC").Limit(5))).
+				Limit(20),
+			wantSQL:  "SELECT COUNT(*) FROM (SELECT * FROM users WHERE id IN (SELECT user_id FROM logins ORDER BY at DESC LIMIT $1)) AS t",
+			wantArgs: []any{5},
+		},
+		{
+			name: "keeps ORDER BY written in the base SQL",
+			query: NewQuery("SELECT * FROM users /* :where */ ORDER BY name", DialectPostgres).
+				Where(Eq("status", "active")),
+			wantSQL:  "SELECT COUNT(*) FROM (SELECT * FROM users WHERE status = $1 ORDER BY name) AS t",
+			wantArgs: []any{"active"},
+		},
+		{
+			name:     "mysql keeps ? placeholders",
+			query:    NewQuery("SELECT id FROM users", DialectMySQL).Where(Eq("status", "active")).Limit(10),
+			wantSQL:  "SELECT COUNT(*) FROM (SELECT id FROM users WHERE status = ?) AS t",
+			wantArgs: []any{"active"},
+		},
+		{
+			name:    "zero Query does not panic",
+			query:   &Query{},
+			wantSQL: "SELECT COUNT(*) FROM () AS t",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotSQL, gotArgs := tt.query.BuildCount()
+
+			assertSQL(t, gotSQL, tt.wantSQL)
+			assertArgs(t, gotArgs, tt.wantArgs)
+		})
+	}
+}
+
+func TestQuery_BuildCountLeavesQueryIntact(t *testing.T) {
+	q := NewQuery("SELECT * FROM users", DialectPostgres).Where(Eq("status", "active")).OrderBy("id").Limit(10)
+
+	q.BuildCount()
+
+	sql, args := q.Build()
+	assertSQL(t, sql, "SELECT * FROM users WHERE status = $1 ORDER BY id LIMIT $2")
+	assertArgs(t, args, []any{"active", 10})
+}
+
+func TestQuery_caseInsensitivePredicates(t *testing.T) {
+	tests := []struct {
+		name     string
+		query    *Query
+		wantSQL  string
+		wantArgs []any
+	}{
+		{
+			name:     "postgres IContains uses ILIKE",
+			query:    NewQuery("SELECT * FROM users", DialectPostgres).Where(IContains("name", "50%")),
+			wantSQL:  "SELECT * FROM users WHERE name ILIKE $1 ESCAPE '!'",
+			wantArgs: []any{"%50!%%"},
+		},
+		{
+			name:     "mysql IContains uses LIKE",
+			query:    NewQuery("SELECT * FROM users", DialectMySQL).Where(IContains("name", "doe")),
+			wantSQL:  "SELECT * FROM users WHERE name LIKE ? ESCAPE '!'",
+			wantArgs: []any{"%doe%"},
+		},
+		{
+			name:     "sqlite IStartsWith uses LIKE",
+			query:    NewQuery("SELECT * FROM products", DialectSQLite).Where(IStartsWith("sku", "AB_")),
+			wantSQL:  "SELECT * FROM products WHERE sku LIKE ? ESCAPE '!'",
+			wantArgs: []any{"AB!_%"},
+		},
+		{
+			name:     "postgres IEndsWith uses ILIKE",
+			query:    NewQuery("SELECT * FROM users", DialectPostgres).Where(IEndsWith("email", "@Example.com")),
+			wantSQL:  "SELECT * FROM users WHERE email ILIKE $1 ESCAPE '!'",
+			wantArgs: []any{"%@Example.com"},
+		},
+		{
+			name:     "postgres Contains stays case-sensitive",
+			query:    NewQuery("SELECT * FROM users", DialectPostgres).Where(Contains("name", "doe")),
+			wantSQL:  "SELECT * FROM users WHERE name LIKE $1 ESCAPE '!'",
+			wantArgs: []any{"%doe%"},
+		},
+		{
+			name:     "BuildCount keeps the dialect",
+			query:    NewQuery("SELECT * FROM users", DialectPostgres).Where(IContains("name", "doe")),
+			wantSQL:  "SELECT COUNT(*) FROM (SELECT * FROM users WHERE name ILIKE $1 ESCAPE '!') AS t",
+			wantArgs: []any{"%doe%"},
+		},
+		{
+			name: "subquery follows the outer query's dialect",
+			query: NewQuery("SELECT * FROM users", DialectPostgres).
+				Where(InQuery("id", NewQuery("SELECT user_id FROM notes", DialectMySQL).
+					Where(IContains("body", "urgent")).
+					Offset(5))),
+			wantSQL:  "SELECT * FROM users WHERE id IN (SELECT user_id FROM notes WHERE body ILIKE $1 ESCAPE '!' OFFSET $2)",
+			wantArgs: []any{"%urgent%", 5},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			build := tt.query.Build
+			if strings.HasPrefix(tt.wantSQL, "SELECT COUNT(*)") {
+				build = tt.query.BuildCount
+			}
+
+			gotSQL, gotArgs := build()
+			assertSQL(t, gotSQL, tt.wantSQL)
+			assertArgs(t, gotArgs, tt.wantArgs)
+		})
+	}
 }

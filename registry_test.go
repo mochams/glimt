@@ -454,5 +454,17 @@ func TestRegistry_AdHocUnterminatedIsKeptAsWritten(t *testing.T) {
 
 	// The database reports the syntax error; glimt does not guess.
 	sql, _ := reg.Query("SELECT 'oops FROM docs").Build()
-	assertSQL(t, sql, "SELECT 'oops FROM docs")
+	assertSQL(t, sql, "SELECT 'oops FROM docs\n")
+}
+
+func TestRegistry_AdHocFallbackEndsLineComment(t *testing.T) {
+	// Under MySQL's NO_BACKSLASH_ESCAPES mode, 'C:\' is a complete string, but
+	// glimt assumes backslash escapes and cannot lex it. The raw fallback must
+	// still keep the appended filter out of the trailing comment.
+	reg := NewRegistry(DialectMySQL)
+
+	sql, _ := reg.Query(`SELECT 'C:\' AS root, d.* FROM docs d -- every doc`).
+		Where(Null("d.deleted_at")).
+		Build()
+	assertSQL(t, sql, "SELECT 'C:\\' AS root, d.* FROM docs d -- every doc\n WHERE d.deleted_at IS NULL")
 }

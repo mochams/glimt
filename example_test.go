@@ -9,7 +9,7 @@ import (
 )
 
 // A list endpoint: optional filters from the request, a fixed tenant filter
-// kept in SQL, client-chosen sorting, and a matching count query.
+// kept in SQL, client-chosen sorting, and the total for pagination.
 func Example() {
 	reg := glimt.NewRegistry(glimt.DialectPostgres)
 
@@ -17,10 +17,6 @@ func Example() {
 		"queries/orders.sql": {Data: []byte(`
 -- :name listOrders
 SELECT * FROM orders
-WHERE org_id = ? /* :and */
-
--- :name countOrders
-SELECT COUNT(*) FROM orders
 WHERE org_id = ? /* :and */
 `)},
 	}
@@ -41,7 +37,7 @@ WHERE org_id = ? /* :and */
 	}
 
 	if search != "" {
-		where = append(where, glimt.Contains("note", search))
+		where = append(where, glimt.IContains("note", search))
 	}
 
 	order, err := glimt.ParseSort("-created", map[string]string{"created": "created_at"})
@@ -49,26 +45,24 @@ WHERE org_id = ? /* :and */
 		panic(err) // respond with 400 Bad Request
 	}
 
-	page, pageArgs := reg.MustGet("listOrders").
+	q := reg.MustGet("listOrders").
 		Args(orgID).
 		Where(where...).
-		OrderBy(append(order, "id")...).
-		Limit(20).
-		Offset(40).
-		Build()
+		OrderBy(append(order, "id")...)
 
-	count, countArgs := reg.MustGet("countOrders").Args(orgID).Where(where...).Build()
+	page, pageArgs := q.Limit(20).Offset(40).Build()
+	total, totalArgs := q.BuildCount()
 
 	fmt.Println(page)
 	fmt.Println(pageArgs)
-	fmt.Println(count)
-	fmt.Println(countArgs)
+	fmt.Println(total)
+	fmt.Println(totalArgs)
 	// Output:
 	// SELECT * FROM orders
 	// WHERE org_id = $1 AND status = $2 AND id IN ($3, $4) ORDER BY created_at DESC, id LIMIT $5 OFFSET $6
 	// [7 paid 3 5 20 40]
-	// SELECT COUNT(*) FROM orders
-	// WHERE org_id = $1 AND status = $2 AND id IN ($3, $4)
+	// SELECT COUNT(*) FROM (SELECT * FROM orders
+	// WHERE org_id = $1 AND status = $2 AND id IN ($3, $4)) AS t
 	// [7 paid 3 5]
 }
 
@@ -113,6 +107,51 @@ func ExampleContains() {
 	// Output:
 	// SELECT * FROM products WHERE name LIKE ? ESCAPE '!'
 	// [%50!%%]
+}
+
+func ExampleQuery_OrderByExpr() {
+	pinnedID := 42 // for example, the row the client just created
+
+	sql, args := glimt.NewQuery("SELECT * FROM orders", glimt.DialectPostgres).
+		Where(glimt.Eq("status", "paid")).
+		OrderByExpr("CASE WHEN id = ? THEN 0 ELSE 1 END", pinnedID).
+		OrderBy("created_at DESC").
+		Build()
+
+	fmt.Println(sql)
+	fmt.Println(args)
+	// Output:
+	// SELECT * FROM orders WHERE status = $1 ORDER BY CASE WHEN id = $2 THEN 0 ELSE 1 END, created_at DESC
+	// [paid 42]
+}
+
+func ExampleQuery_BuildCount() {
+	q := glimt.NewQuery("SELECT id, total FROM orders", glimt.DialectPostgres).
+		Where(glimt.Eq("status", "paid")).
+		OrderBy("created_at DESC").
+		Limit(20).
+		Offset(40)
+
+	sql, args := q.BuildCount()
+
+	fmt.Println(sql)
+	fmt.Println(args)
+	// Output:
+	// SELECT COUNT(*) FROM (SELECT id, total FROM orders WHERE status = $1) AS t
+	// [paid]
+}
+
+func ExampleIContains() {
+	for _, dialect := range []glimt.Dialect{glimt.DialectPostgres, glimt.DialectMySQL} {
+		sql, args := glimt.NewQuery("SELECT * FROM users", dialect).
+			Where(glimt.IContains("name", "doe")).
+			Build()
+
+		fmt.Println(sql, args)
+	}
+	// Output:
+	// SELECT * FROM users WHERE name ILIKE $1 ESCAPE '!' [%doe%]
+	// SELECT * FROM users WHERE name LIKE ? ESCAPE '!' [%doe%]
 }
 
 func ExampleParseSort() {

@@ -80,6 +80,28 @@
 //
 //	q.OrderBy(append(order, "o.id")...) // unique tiebreaker for stable pages
 //
+// OrderByExpr adds an ORDER BY expression with bound arguments, such as a
+// search rank or a row pinned to the top. Request input goes in the
+// arguments, never in the expression:
+//
+//	q.OrderByExpr("CASE WHEN id = ? THEN 0 ELSE 1 END", pinnedID).OrderBy("name")
+//	// ORDER BY CASE WHEN id = $1 THEN 0 ELSE 1 END, name
+//
+// # Pagination
+//
+// BuildCount builds the total for the same filtered query, leaving out its
+// ORDER BY, LIMIT and OFFSET and their arguments:
+//
+//	q := reg.MustGet("listOrders").Args(orgID).Where(where...).OrderBy(order...)
+//
+//	page, pageArgs := q.Limit(size).Offset(offset).Build()
+//	total, totalArgs := q.BuildCount()
+//	// SELECT COUNT(*) FROM (SELECT ... WHERE org_id = $1 AND ...) AS t
+//
+// A query with GROUP BY counts groups. On MySQL, a SELECT * over a join can
+// produce duplicate column names, which the count's derived table rejects;
+// list the columns instead.
+//
 // # Predicates
 //
 // Predicates are composable conditions that can be combined with And, Or, and Not:
@@ -95,14 +117,18 @@
 //	// (status = ? AND (role = ? OR role = ?) AND NOT (deleted_at IS NULL))
 //
 // Available predicates: Cond, Eq, Neq, Gt, Gte, Lt, Lte, Like, NotLike,
-// ILike, Contains, StartsWith, EndsWith, Null, NotNull, In, NotIn, InQuery,
-// Exists, Between, NotBetween, RangeOpen, And, Or, Not, If.
+// ILike, Contains, StartsWith, EndsWith, IContains, IStartsWith, IEndsWith,
+// Null, NotNull, In, NotIn, InQuery, Exists, Between, NotBetween, RangeOpen,
+// And, Or, Not, If.
 //
 // For search boxes, Contains, StartsWith and EndsWith escape the LIKE
-// wildcards % and _ in user input, so they match literally:
+// wildcards % and _ in user input, so they match literally. IContains,
+// IStartsWith and IEndsWith do the same and ignore case: Postgres renders
+// ILIKE, while MySQL and SQLite render LIKE, which ignores case under their
+// default collations (see IContains for the details):
 //
-//	glimt.Or(glimt.Contains("name", q), glimt.Contains("email", q))
-//	// (name LIKE ? ESCAPE '!' OR email LIKE ? ESCAPE '!')
+//	glimt.Or(glimt.IContains("name", q), glimt.IContains("email", q))
+//	// Postgres: (name ILIKE $1 ESCAPE '!' OR email ILIKE $2 ESCAPE '!')
 //
 // Cond wraps its raw expression in parentheses, so a condition containing OR
 // keeps its meaning when combined with other predicates.
@@ -204,6 +230,11 @@
 //
 // On Postgres, use ? rather than native $1 placeholders; mixing the two would
 // number parameters twice, so $1 in a loaded query is a load error.
+//
+// The lexer reads string literals the way each database does by default. It
+// assumes Postgres runs with standard_conforming_strings=on (the default since
+// 9.1), and MySQL with backslash escapes enabled and without ANSI_QUOTES, the
+// default sql_mode. Under other settings a literal such as 'C:\' can be misread.
 //
 // Query names must be unique within a file and across all loaded files.
 // Duplicates, empty query bodies, unterminated quotes and unterminated
