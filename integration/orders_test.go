@@ -24,12 +24,7 @@ type Order struct {
 
 func insertOrder(t *testing.T, userID, productID, quantity int, total float64) int {
 	t.Helper()
-	sql, _ := testState.registry.MustGet("insertOrder").Build()
-	var id int
-	if err := testState.db.QueryRow(sql, userID, productID, quantity, total).Scan(&id); err != nil {
-		t.Fatalf("insertOrder: %v", err)
-	}
-	return id
+	return insertID(t, "insertOrder", userID, productID, quantity, total)
 }
 
 func scanOrder(t *testing.T, rows interface{ Scan(...any) error }) Order {
@@ -349,5 +344,41 @@ func TestOrder_NotFilter(t *testing.T) {
 	n := countRows(t, listSQL, listArgs...)
 	if n != 1 {
 		t.Errorf("count: got %d, want 1", n)
+	}
+}
+
+func TestOrder_Subqueries(t *testing.T) {
+	t.Cleanup(func() { cleanAll(t) })
+
+	alice := insertUser(t, "Alice", "alice@example.com", "active", 30)
+	bob := insertUser(t, "Bob", "bob@example.com", "active", 25)
+	insertUser(t, "Charlie", "charlie@example.com", "active", 40)
+	productID := insertProduct(t, "Laptop", "electronics", "active", 999.99, 10)
+
+	completed := insertOrder(t, alice, productID, 1, 999.99)
+	insertOrder(t, bob, productID, 1, 999.99)
+
+	sql, args := testState.registry.MustGet("updateOrderStatus").Args("completed", completed).Build()
+	if _, err := testState.db.Exec(sql, args...); err != nil {
+		t.Fatalf("updateOrderStatus: %v", err)
+	}
+
+	for _, tc := range []struct {
+		name string
+		pred gl.Predicate
+		want int
+	}{
+		{"InQuery", gl.InQuery("id", testState.registry.MustGet("orderUserIDs").Where(gl.Eq("status", "completed"))), 1},
+		{"Exists", gl.Exists(testState.registry.MustGet("userOrders")), 2},
+		{"Exists with filter", gl.Exists(testState.registry.MustGet("userOrders").Where(gl.Eq("o.status", "pending"))), 1},
+		{"Not Exists", gl.Not(gl.Exists(testState.registry.MustGet("userOrders"))), 1},
+	} {
+		sql, args := testState.registry.MustGet("listUsers").
+			Where(gl.Eq("status", "active"), tc.pred).
+			Build()
+
+		if n := countRows(t, sql, args...); n != tc.want {
+			t.Errorf("%s: got %d rows, want %d\n%s %v", tc.name, n, tc.want, sql, args)
+		}
 	}
 }

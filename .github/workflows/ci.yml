@@ -2,6 +2,8 @@ name: Test
 
 on:
   push:
+    branches: [main]
+  pull_request:
 
 jobs:
   test:
@@ -22,6 +24,19 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: mysql
+          MYSQL_DATABASE: glimt_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -pmysql"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     strategy:
       matrix:
         go: ["1.25", "1.26"]
@@ -40,7 +55,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: latest
+          version: v2.13.2
 
       - name: Run tests
         run: make test TEST_FLAGS="-v"
@@ -48,7 +63,19 @@ jobs:
       - name: Run tests with race detector
         run: make test TEST_FLAGS="-race -v"
 
-      - name: Run integration tests
+      - name: Run integration tests (Postgres)
         run: make integration
         env:
+          TEST_DIALECT: postgres
           TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/glimt_test?sslmode=disable
+
+      - name: Run integration tests (MySQL)
+        run: make integration
+        env:
+          TEST_DIALECT: mysql
+          TEST_DATABASE_URL: root:mysql@tcp(127.0.0.1:3306)/glimt_test?parseTime=true
+
+      - name: Run integration tests (SQLite)
+        run: make integration
+        env:
+          TEST_DIALECT: sqlite

@@ -1,135 +1,184 @@
 package glimt
 
+import "strings"
+
 // Predicate represents a SQL condition that evaluates to a boolean.
+//
+// A nil Predicate is valid and renders nothing: Where, Having, And, Or and Not
+// skip it. This makes optional filters safe to compose (see If).
 type Predicate func(*sqlBuilder)
 
-// Cond creates a simple predicate with the given expression and arguments.
-// Example usage: Cond("age > ?", 30)
-// creates a predicate that builds "age > ?" with argument 30.
+// Cond creates a predicate from a raw SQL expression and its arguments.
+// The expression is wrapped in parentheses so it composes safely with other predicates.
+// A blank expression renders nothing.
+// Example usage: Cond("age > ? OR vip", 30)
+// creates "(age > ? OR vip)" with argument 30.
 func Cond(expr string, args ...any) Predicate {
+	if strings.TrimSpace(expr) == "" {
+		return nil
+	}
+
 	return func(b *sqlBuilder) {
+		b.writeByte('(')
 		b.write(expr)
+		b.writeByte(')')
 		b.args = append(b.args, args...)
 	}
 }
 
+// If returns p when cond is true, and nil otherwise.
+// Because nil predicates render nothing, If expresses an optional filter inline.
+// Example usage: If(status != "", Eq("status", status))
+//
+// The arguments of p are evaluated even when cond is false, so avoid dereferencing
+// pointers inside If. Appending to a []Predicate and calling Where(preds...) avoids this.
+func If(cond bool, p Predicate) Predicate {
+	if cond {
+		return p
+	}
+
+	return nil
+}
+
 // And combines multiple predicates with a logical AND.
-// It handles zero, one, or multiple predicates appropriately.
-// Example usage: And(CondX("age > ?", 30), CondX("status = ?", "active"))
+// Nil and empty predicates are skipped; the result is parenthesized only when
+// two or more predicates render, and renders nothing when none do.
+// Example usage: And(Gt("age", 30), Eq("status", "active"))
 // creates "(age > ? AND status = ?)" with arguments 30 and "active".
 func And(preds ...Predicate) Predicate {
 	return func(b *sqlBuilder) {
-		if len(preds) == 0 {
-			return
-		}
-
-		if len(preds) == 1 {
-			preds[0](b)
-
-			return
-		}
-
-		b.writeByte('(')
-
-		for i := range preds {
-			if i > 0 {
-				b.write(" AND ")
-			}
-
-			preds[i](b)
-		}
-
-		b.writeByte(')')
+		b.group(" AND ", preds)
 	}
 }
 
 // Or combines multiple predicates with a logical OR.
-// It handles zero, one, or multiple predicates appropriately.
-// Example usage: Or(CondX("age < ?", 18), CondX("age > ?", 65))
+// Nil and empty predicates are skipped; the result is parenthesized only when
+// two or more predicates render, and renders nothing when none do.
+// Example usage: Or(Lt("age", 18), Gt("age", 65))
 // creates "(age < ? OR age > ?)" with arguments 18 and 65.
 func Or(preds ...Predicate) Predicate {
 	return func(b *sqlBuilder) {
-		if len(preds) == 0 {
-			return
-		}
-
-		if len(preds) == 1 {
-			preds[0](b)
-
-			return
-		}
-
-		b.writeByte('(')
-
-		for i := range preds {
-			if i > 0 {
-				b.write(" OR ")
-			}
-
-			preds[i](b)
-		}
-
-		b.writeByte(')')
+		b.group(" OR ", preds)
 	}
 }
 
 // In creates a predicate for an IN clause with the specified column and values.
+// Values can be listed or spread from a typed slice: In("id", ids...).
+// An empty value list renders "1=0", which matches no rows, so a filter such as
+// In("org_id", allowed...) never widens to every row when allowed is empty.
 // Example usage: In("id", 1, 2, 3)
 // creates "id IN (?, ?, ?)" with arguments 1, 2, and 3.
-func In(col string, vals ...any) Predicate {
+//
+// For long lists on Postgres, Cond("id = ANY(?)", ids) binds a single array
+// argument instead of one placeholder per value.
+func In[T any](col string, vals ...T) Predicate {
 	return func(b *sqlBuilder) {
 		if len(vals) == 0 {
+			b.write("1=0")
+
 			return
 		}
 
-		b.write(col)
-		b.write(" IN (")
-
-		for i := range vals {
-			if i > 0 {
-				b.write(", ")
-			}
-
-			b.writeByte('?')
-			b.arg(vals[i])
-		}
-
-		b.writeByte(')')
+		writeList(b, col, " IN (", vals)
 	}
 }
 
 // NotIn creates a predicate for a NOT IN clause with the specified column and values.
+// Values can be listed or spread from a typed slice: NotIn("id", ids...).
+// An empty value list renders "1=1", which matches every row.
 // Example usage: NotIn("id", 1, 2, 3)
 // creates "id NOT IN (?, ?, ?)" with arguments 1, 2, and 3.
-func NotIn(col string, vals ...any) Predicate {
+func NotIn[T any](col string, vals ...T) Predicate {
 	return func(b *sqlBuilder) {
 		if len(vals) == 0 {
+			b.write("1=1")
+
 			return
 		}
 
-		b.write(col)
-		b.write(" NOT IN (")
+		writeList(b, col, " NOT IN (", vals)
+	}
+}
 
-		for i := range vals {
-			if i > 0 {
-				b.write(", ")
-			}
+// writeList writes "col<op>?, ?, ...)" and appends vals as arguments.
+func writeList[T any](b *sqlBuilder, col, op string, vals []T) {
+	b.write(col)
+	b.write(op)
 
-			b.writeByte('?')
-			b.arg(vals[i])
+	for i := range vals {
+		if i > 0 {
+			b.write(", ")
 		}
 
+		b.writeByte('?')
+		b.arg(vals[i])
+	}
+
+	b.writeByte(')')
+}
+
+// InQuery creates a predicate for an IN clause with a subquery.
+// The subquery keeps its own Args, filters and clause markers. It is rendered
+// when the outer query is built, and its placeholders are numbered together
+// with the outer query's, so both can come from the registry:
+//
+//	InQuery("id", reg.MustGet("tripUserIDs").Where(Eq("trip_id", 42)))
+//
+// creates "id IN (SELECT user_id FROM trip_users WHERE trip_id = ?)" with argument 42.
+//
+// For "not in", prefer Not(Exists(...)): NOT IN matches no rows as soon as
+// the subquery returns a NULL.
+//
+// InQuery panics if q is nil. A nil subquery is a programming error, such as
+// an ignored error from Registry.Get; for an optional subquery filter, use If.
+func InQuery(col string, q *Query) Predicate {
+	if q == nil {
+		panic("glimt: InQuery: nil subquery")
+	}
+
+	return func(b *sqlBuilder) {
+		b.write(col)
+		b.write(" IN (")
+		q.build(b)
+		b.writeByte(')')
+	}
+}
+
+// Exists creates a predicate for an EXISTS clause with a subquery.
+// Like InQuery, the subquery is rendered when the outer query is built and its
+// placeholders are numbered with the outer query's. Correlate it with the
+// outer query in its SQL, for example "SELECT 1 FROM orders o WHERE o.user_id = users.id".
+// Example usage: Exists(reg.MustGet("userOrders").Where(Eq("o.status", "paid")))
+// creates "EXISTS (SELECT 1 FROM orders o WHERE o.user_id = users.id AND o.status = ?)".
+//
+// Exists panics if q is nil, for the same reason as InQuery.
+func Exists(q *Query) Predicate {
+	if q == nil {
+		panic("glimt: Exists: nil subquery")
+	}
+
+	return func(b *sqlBuilder) {
+		b.write("EXISTS (")
+		q.build(b)
 		b.writeByte(')')
 	}
 }
 
 // Not creates a predicate that negates the given predicate with a logical NOT.
-// Example usage: Not(CondX("status = ?", "active"))
+// It renders nothing when pred is nil or renders nothing.
+// Example usage: Not(Eq("status", "active"))
 // creates "NOT (status = ?)" with argument "active".
 func Not(pred Predicate) Predicate {
 	return func(b *sqlBuilder) {
+		mark := len(b.buf)
 		b.write("NOT (")
-		pred(b)
+
+		if !b.render(pred) {
+			b.buf = b.buf[:mark]
+
+			return
+		}
+
 		b.writeByte(')')
 	}
 }
@@ -249,6 +298,46 @@ func ILike(col, pattern string) Predicate {
 	return func(b *sqlBuilder) {
 		b.write(col)
 		b.write(" ILIKE ?")
+		b.arg(pattern)
+	}
+}
+
+// likeEscaper escapes LIKE wildcards with '!'. Unlike a backslash, '!' needs no
+// escaping inside SQL string literals on any supported dialect.
+var likeEscaper = strings.NewReplacer("!", "!!", "%", "!%", "_", "!_")
+
+// Contains creates a predicate matching rows where col contains s.
+// Wildcards in s match literally, so user input such as "50%" is safe to pass.
+// Example usage: Contains("name", "50%")
+// creates "name LIKE ? ESCAPE '!'" with argument "%50!%%".
+//
+// LIKE is case-sensitive on Postgres; for case-insensitive search, use
+// Contains("lower(name)", strings.ToLower(s)). An empty s matches every non-NULL value.
+func Contains(col, s string) Predicate {
+	return likeEscaped(col, "%"+likeEscaper.Replace(s)+"%")
+}
+
+// StartsWith creates a predicate matching rows where col starts with s.
+// Wildcards in s match literally.
+// Example usage: StartsWith("sku", "AB_")
+// creates "sku LIKE ? ESCAPE '!'" with argument "AB!_%".
+func StartsWith(col, s string) Predicate {
+	return likeEscaped(col, likeEscaper.Replace(s)+"%")
+}
+
+// EndsWith creates a predicate matching rows where col ends with s.
+// Wildcards in s match literally.
+// Example usage: EndsWith("email", "@example.com")
+// creates "email LIKE ? ESCAPE '!'" with argument "%@example.com".
+func EndsWith(col, s string) Predicate {
+	return likeEscaped(col, "%"+likeEscaper.Replace(s))
+}
+
+// likeEscaped writes "col LIKE ? ESCAPE '!'" with the escaped pattern as its argument.
+func likeEscaped(col, pattern string) Predicate {
+	return func(b *sqlBuilder) {
+		b.write(col)
+		b.write(" LIKE ? ESCAPE '!'")
 		b.arg(pattern)
 	}
 }

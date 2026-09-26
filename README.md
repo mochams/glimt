@@ -24,12 +24,11 @@ import gl "github.com/mochams/glimt"
 
 reg := gl.NewRegistry(gl.DialectPostgres)
 
-users := reg.MustGet("listUsers").Where(gl.Eq("status", "active"))
-users.Where(gl.Eq("role", "admin"))
-users.Limit(10)
-users.Offset(2)
-
-sql, args := users.Build()
+sql, args := reg.MustGet("listUsers").
+    Where(gl.Eq("status", "active"), gl.Eq("role", "admin")).
+    Limit(10).
+    Offset(2).
+    Build()
 ```
 
 Generated SQL (Postgres):
@@ -72,7 +71,7 @@ admins, args := reg.MustGet("listUsers").
     Build()
 
 user, args := reg.MustGet("listUsers").
-    Where(gl.Eq("id", "user_id")).
+    Where(gl.Eq("id", userID)).
     Limit(1).
     Build()
 ```
@@ -104,6 +103,15 @@ sql, args := reg.Query("SELECT * FROM users").
     Build()
 ```
 
+For SQL defined in Go that runs on every request, register it once at startup
+so it is sanitized once, like queries loaded from files:
+
+```go
+if err := reg.Add("activeUsers", "SELECT * FROM users WHERE deleted_at IS NULL"); err != nil {
+    log.Fatal(err)
+}
+```
+
 Queries are defined using `-- :name` annotations.
 
 ```sql
@@ -116,8 +124,8 @@ DELETE FROM users WHERE id = ?
 
 Query names must be unique across all loaded files.
 
-For dynamic filtering, avoid writing a top-level `WHERE` clause in the base query.
-Instead attach conditions through the builder:
+By default, dynamic clauses are appended to the end of the base query, so a
+query without a fixed `WHERE` can be filtered directly:
 
 ```sql
 -- :name listUsers
@@ -136,6 +144,96 @@ guests := reg.MustGet("listUsers").
 
 One base query, multiple use cases, no duplication.
 
+For API endpoints, apply only the filters a request uses. `gl.If` skips a
+filter when its condition is false, and `WHERE` is omitted when no filter applies:
+
+```go
+where := []gl.Predicate{
+    gl.If(status != "", gl.Eq("status", status)),
+    gl.If(len(roles) > 0, gl.In("role", roles...)),
+    // Contains escapes % and _ in user input, so they match literally.
+    gl.If(search != "", gl.Or(gl.Contains("name", search), gl.Contains("email", search))),
+}
+
+sql, args := reg.MustGet("listUsers").Where(where...).Limit(20).Build()
+```
+
+Go evaluates the arguments of `gl.If` even when the condition is false, so
+`gl.If(req.MinAge != nil, gl.Gte("age", *req.MinAge))` panics when `MinAge` is
+nil. Use a plain `if` for filters that dereference a pointer:
+
+```go
+if req.MinAge != nil {
+    where = append(where, gl.Gte("age", *req.MinAge))
+}
+```
+
+`In` with an empty list matches no rows, so an access filter such as
+`gl.In("org_id", allowed...)` never widens to every row. That is why the roles
+filter above is wrapped in `gl.If`.
+
+To keep a fixed `WHERE`, `GROUP BY`, `UNION` or `RETURNING` in the SQL file,
+mark where the filters go. Markers are comments, so the file still runs as-is
+in psql:
+
+```sql
+-- :name countOrders
+SELECT status, COUNT(*) FROM orders
+WHERE org_id = ? AND deleted_at IS NULL /* :and */
+GROUP BY status
+```
+
+```go
+sql, args := reg.MustGet("countOrders").
+    Args(orgID).
+    Where(where...).
+    Build()
+// SELECT status, COUNT(*) FROM orders
+// WHERE org_id = $1 AND deleted_at IS NULL AND status = $2
+// GROUP BY status
+```
+
+Use `/* :and */` after a fixed `WHERE`, and `/* :where */` where there is none.
+Both render nothing when no filter applies.
+
+Subqueries can be named too. `InQuery` and `Exists` embed one query in another,
+and all placeholders are numbered once:
+
+```sql
+-- :name listUsers
+SELECT * FROM users
+
+-- :name tripUserIDs
+SELECT user_id FROM trip_users
+```
+
+```go
+sql, args := reg.MustGet("listUsers").
+    Where(gl.InQuery("id", reg.MustGet("tripUserIDs").Where(gl.Eq("trip_id", tripID)))).
+    Where(gl.Eq("status", "active")).
+    Build()
+// SELECT * FROM users
+// WHERE id IN (SELECT user_id FROM trip_users WHERE trip_id = $1) AND status = $2
+```
+
+For "not in", prefer `gl.Not(gl.Exists(...))`, which is not tripped up by NULLs.
+
+Let clients choose the sort order without passing request input into SQL.
+Only allowlisted fields are accepted; a leading `-` sorts descending:
+
+```go
+order, err := gl.ParseSort(r.URL.Query().Get("sort"), map[string]string{
+    "created": "o.created_at",
+    "total":   "o.total",
+})
+if err != nil {
+    http.Error(w, err.Error(), http.StatusBadRequest)
+    return
+}
+
+q.OrderBy(append(order, "o.id")...) // "-created" → ORDER BY o.created_at DESC, o.id
+```
+
 Glimt automatically writes placeholders for the target database.
 
 <table style="width: 100%;">
@@ -151,23 +249,19 @@ Glimt automatically writes placeholders for the target database.
     <td>MySQL, SQLite</td>
     <td>?, ?, ?</td>
   </tr>
-  <tr>
-    <td>SQL Server</td>
-    <td>@p1, @p2, @p3</td>
-  </tr>
-  <tr>
-    <td>Oracle</td>
-    <td>:1, :2, :3</td>
-  </tr>
 </table>
 
 SQL files should always use `?` placeholders. They are rewritten to the correct format at build time.
+Write `??` for a literal question mark, such as the Postgres JSONB `?` operator.
+
+Comments are stripped once, when queries are loaded. Stripping understands string
+literals and quoted identifiers, so `'--'` inside a literal is kept.
 
 Glimt aims to stay **SQL-first**, **Composable**, **Lightweight**, and **Dependency-free**
 
-See the full example in [`example`](example).
+Release notes and upgrade steps are in [CHANGELOG.md](CHANGELOG.md).
 
-Full API documentation is available at:
+Full API documentation, with runnable examples, is available at:
 
 <https://pkg.go.dev/github.com/mochams/glimt>
 
