@@ -158,9 +158,7 @@ where := []gl.Predicate{
 sql, args := reg.MustGet("listUsers").Where(where...).Limit(20).Build()
 ```
 
-Go evaluates the arguments of `gl.If` even when the condition is false, so
-`gl.If(req.MinAge != nil, gl.Gte("age", *req.MinAge))` panics when `MinAge` is
-nil. Use a plain `if` for filters that dereference a pointer:
+Use a plain `if` for filters that dereference a pointer:
 
 ```go
 if req.MinAge != nil {
