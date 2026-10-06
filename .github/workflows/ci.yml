@@ -9,34 +9,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: glimt_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      mysql:
-        image: mysql:8
-        env:
-          MYSQL_ROOT_PASSWORD: mysql
-          MYSQL_DATABASE: glimt_test
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -pmysql"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-
     strategy:
       matrix:
         go: ["1.25", "1.26"]
@@ -63,19 +35,54 @@ jobs:
       - name: Run tests with race detector
         run: make test TEST_FLAGS="-race -v"
 
-      - name: Run integration tests (Postgres)
-        run: make integration
-        env:
-          TEST_DIALECT: postgres
-          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/glimt_test?sslmode=disable
+      - name: Fuzz parser
+        run: make fuzz FUZZTIME=30s
 
-      - name: Run integration tests (MySQL)
-        run: make integration
-        env:
-          TEST_DIALECT: mysql
-          TEST_DATABASE_URL: root:mysql@tcp(127.0.0.1:3306)/glimt_test?parseTime=true
+  oracle:
+    runs-on: ubuntu-latest
+    name: Oracle
 
-      - name: Run integration tests (SQLite)
-        run: make integration
+    services:
+      postgres:
+        image: postgres:17
         env:
-          TEST_DIALECT: sqlite
+          POSTGRES_USER: glimt
+          POSTGRES_PASSWORD: glimt
+          POSTGRES_DB: glimt
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+          cache: true
+          cache-dependency-path: integration/go.sum
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.13.2
+          working-directory: integration
+
+      - name: Corpus is up to date
+        run: make corpus && git diff --exit-code integration/testdata/glimt.jsonl
+
+      - name: Fetch the Postgres regression suite
+        run: make oracle-corpus
+
+      - name: Oracle and live Postgres
+        run: make oracle TEST_FLAGS="-v"
+        env:
+          GLIMT_PG_DSN: postgres://glimt:glimt@localhost:5432/glimt?sslmode=disable
+
+      - name: Fuzz the oracle
+        run: make oracle-fuzz FUZZTIME=30s
