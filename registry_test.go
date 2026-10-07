@@ -2,469 +2,164 @@ package glimt
 
 import (
 	"errors"
-	"os"
+	"slices"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
 
-// Helpers
+// mapFS builds a filesystem of .sql files from file names and contents.
+func mapFS(files map[string]string) fstest.MapFS {
+	fsys := fstest.MapFS{}
+	for name, src := range files {
+		fsys[name] = &fstest.MapFile{Data: []byte(src)}
+	}
 
-func assertErrorContains(t *testing.T, err error, wantSubstring string) {
-	t.Helper()
+	return fsys
+}
 
+func TestLoad(t *testing.T) {
+	fsys := mapFS(map[string]string{
+		"q/a.sql":        "-- name: one\nSELECT 1;\n-- name: two\nSELECT :x;",
+		"q/nested/b.sql": "-- name: three\nUPDATE t SET a = :a WHERE id = :id",
+		"q/readme.txt":   "-- name: ignored\nSELECT 1",
+		"other/c.sql":    "-- name: outside\nSELECT 1",
+	})
+
+	reg, err := Load(fsys, "q")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := reg.Names(), []string{"one", "three", "two"}; !slices.Equal(got, want) {
+		t.Errorf("Names = %v, want %v", got, want)
+	}
+
+	if q := reg.Get("three"); q.Name() != "three" || !slices.Equal(q.params, []string{"a", "id"}) {
+		t.Errorf("Get(three) = %q with params %v", q.Name(), q.params)
+	}
+}
+
+func TestLoadErrors(t *testing.T) {
+	fsys := mapFS(map[string]string{
+		"a.sql": "-- name: dup\nSELECT 1\n-- name: bad-name\nSELECT 2\n-- name: empty\n-- nothing\n-- name: broken\nSELECT a FROM WHERE",
+		"b.sql": "-- name: dup\nSELECT 3",
+		"c.sql": "-- name: open\nSELECT 'x",
+		"d.sql": "-- name:\nSELECT 1",
+	})
+
+	_, err := Load(fsys, ".")
 	if err == nil {
-		t.Errorf("expected error containing %q, got nil", wantSubstring)
-
-		return
+		t.Fatal("Load succeeded, want errors")
 	}
 
-	if !strings.EqualFold(err.Error(), wantSubstring) {
-		t.Errorf("unexpected error message: got %q, want substring %q", err.Error(), wantSubstring)
-	}
-}
-
-// Tests
-
-func TestRegistry_GetUnknownQuery(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	_, err := reg.Get("nonexistent")
-	if !errors.Is(err, ErrNotFound) {
-		t.Errorf("expected ErrNotFound, got %v", err)
+	want := []string{
+		`a.sql:3:1: glimt: invalid query name "bad-name": use letters, digits and _`,
+		`a.sql:5:1: glimt: query "empty" has no SQL`,
+		`a.sql:8:15: glimt: expected expression after FROM, found "WHERE"`,
+		`b.sql:1:1: glimt: duplicate query name "dup", first defined at a.sql:1`,
+		`c.sql:2:8: glimt: unterminated string literal`,
+		`d.sql:1:1: glimt: malformed annotation "-- name:": want "-- name: <name>"`,
 	}
 
-	assertErrorContains(t, err, `glimt: query not found: "nonexistent"`)
-}
-
-func TestRegistry_MustGetPanicsOnUnknown(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("expected panic for unknown query, got none")
-		}
-	}()
-
-	reg := NewRegistry(DialectPostgres)
-	reg.MustGet("nonexistent")
-}
-
-func TestRegistry_AdHocQuery(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-	sql, args := reg.Query("SELECT * FROM users").
-		Where(Eq("status", "active")).
-		Build()
-
-	assertSQL(t, sql, "SELECT * FROM users WHERE status = $1")
-	assertArgs(t, args, []any{"active"})
-}
-
-func TestRegistry_LoadFile(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-	if err := reg.LoadFile("testdata/queries/users.sql"); err != nil {
-		t.Fatalf("failed to load queries: %v", err)
+	if got := strings.Split(err.Error(), "\n"); !slices.Equal(got, want) {
+		t.Errorf("Load errors:\n%s\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
 
-	gotSQL, err := reg.Get("insertUser")
-	if err != nil {
-		t.Fatalf("failed to get query: %v", err)
-	}
-
-	sql, _ := gotSQL.Build()
-	wantSQL := "INSERT INTO users (name, email, status, age)\nVALUES ($1, $2, $3, $4)\nRETURNING id"
-	assertSQL(t, sql, wantSQL)
-}
-
-func TestRegistry_LoadDuplicateFile(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.LoadFile("testdata/invalid_queries/duplicate_names.sql")
-	if err == nil {
-		t.Fatal("expected error for duplicate query names, got nil")
-	}
-
-	errMsg := "glimt: parse testdata/invalid_queries/duplicate_names.sql: line 4: duplicate query name \"listUsers\""
-	assertErrorContains(t, err, errMsg)
-}
-
-func TestRegistry_LoadNonexistentFile(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.LoadFile("testdata/queries/nonexistent.sql")
-	if err == nil {
-		t.Fatal("expected error for nonexistent file, got nil")
-	}
-
-	errMsg := "glimt: open testdata/queries/nonexistent.sql: open nonexistent.sql: no such file or directory"
-	assertErrorContains(t, err, errMsg)
-}
-
-func TestRegistry_LoadMalformedAnnotation(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.LoadFile("testdata/invalid_queries/wrong_names.sql")
-
-	errMsg := "glimt: parse testdata/invalid_queries/wrong_names.sql: line 1: " +
-		"malformed annotation \"name: createProductsTable\": use \"-- :name <name>\""
-	assertErrorContains(t, err, errMsg)
-
-	if len(reg.Queries()) != 0 {
-		t.Errorf("expected no queries loaded, got %d", len(reg.Queries()))
+	var lerr *LoadError
+	if !errors.As(err, &lerr) || lerr.File != "a.sql" {
+		t.Errorf("errors.As(*LoadError) = %v", lerr)
 	}
 }
 
-func TestRegistry_LoadEmptyFile(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.LoadFile("testdata/queries/empty.sql")
-	if err != nil {
-		t.Fatal("unexpected error loading file:", err)
-	}
-
-	if len(reg.Queries()) != 0 {
-		t.Errorf("expected no queries loaded, got %d", len(reg.Queries()))
+func TestLoadMissingDir(t *testing.T) {
+	if _, err := Load(mapFS(nil), "missing"); err == nil {
+		t.Error("Load of a missing directory succeeded")
 	}
 }
 
-func TestRegistry_LoadDir(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.Load("testdata/queries")
-	if err != nil {
-		t.Fatalf("failed to load queries: %v", err)
-	}
-
-	expectedQueries := []string{
-		"countUsersByStatus",
-		"createOrdersTable",
-		"createProductsTable",
-		"createUsersTable",
-		"dropOrdersTable",
-		"dropProductsTable",
-		"dropUsersTable",
-		"insertOrder",
-		"insertProduct",
-		"insertUser",
-		"listActiveUsers",
-		"listOrders",
-		"listProducts",
-		"listUsers",
-		"softDeleteOrder",
-		"updateOrderStatus",
-		"updateProductStock",
-	}
-	gotQueries := reg.Queries()
-
-	if len(gotQueries) != len(expectedQueries) {
-		t.Fatalf("expected %d queries, got %d", len(expectedQueries), len(gotQueries))
-	}
-
-	for i, want := range expectedQueries {
-		if gotQueries[i] != want {
-			t.Errorf("query[%d]: got %q, want %q", i, gotQueries[i], want)
-		}
-	}
-}
-
-func TestRegistry_LoadNonExistentFolder(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.Load("testdata/nonexistent")
-	if err == nil {
-		t.Fatal("expected error for nonexistent directory, got nil")
-	}
-
-	errMsg := "glimt: read dir testdata/nonexistent: stat testdata/nonexistent: no such file or directory"
-	assertErrorContains(t, err, errMsg)
-}
-
-func TestRegistry_LoadEmptyDir(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.Load("testdata/empty_queries")
-	if err != nil {
-		t.Fatal("unexpected error loading empty directory:", err)
-	}
-
-	if len(reg.Queries()) != 0 {
-		t.Errorf("expected no queries loaded, got %d", len(reg.Queries()))
-	}
-}
-
-func TestRegistry_LoadInvalidQueries(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.Load("testdata/invalid_queries")
-	if err == nil {
-		t.Fatal("expected error for invalid queries, got nil")
-	}
-
-	errMsg := "glimt: parse testdata/invalid_queries/duplicate_names.sql: line 4: duplicate query name \"listUsers\""
-	assertErrorContains(t, err, errMsg)
-}
-
-func TestRegistry_LoadFileFS(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.LoadFileFS(os.DirFS("testdata/queries"), "users.sql")
-	if err != nil {
-		t.Fatalf("failed to load queries from FS: %v", err)
-	}
-
-	gotSQL, err := reg.Get("insertUser")
-	if err != nil {
-		t.Fatalf("failed to get query: %v", err)
-	}
-
-	sql, _ := gotSQL.Build()
-	wantSQL := "INSERT INTO users (name, email, status, age)\nVALUES ($1, $2, $3, $4)\nRETURNING id"
-	assertSQL(t, sql, wantSQL)
-}
-
-func TestRegistry_LoadFileFSNonexistentFile(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.LoadFileFS(os.DirFS("testdata/queries"), "nonexistent.sql")
-	if err == nil {
-		t.Fatal("expected error for nonexistent file in FS, got nil")
-	}
-
-	errMsg := "glimt: open nonexistent.sql: open nonexistent.sql: no such file or directory"
-	assertErrorContains(t, err, errMsg)
-}
-
-func TestRegistry_LoadFileFSDuplicate(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.LoadFileFS(os.DirFS("testdata/invalid_queries"), "duplicate_names.sql")
-	if err == nil {
-		t.Fatal("expected error for duplicate query names in FS, got nil")
-	}
-
-	errMsg := "glimt: parse duplicate_names.sql: line 4: duplicate query name \"listUsers\""
-	assertErrorContains(t, err, errMsg)
-}
-
-func TestRegistry_LoadFS(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.LoadFS(os.DirFS("testdata/queries"), ".")
-	if err != nil {
-		t.Fatalf("failed to walk FS: %v", err)
-	}
-
-	expectedQueries := []string{
-		"countUsersByStatus",
-		"createOrdersTable",
-		"createProductsTable",
-		"createUsersTable",
-		"dropOrdersTable",
-		"dropProductsTable",
-		"dropUsersTable",
-		"insertOrder",
-		"insertProduct",
-		"insertUser",
-		"listActiveUsers",
-		"listOrders",
-		"listProducts",
-		"listUsers",
-		"softDeleteOrder",
-		"updateOrderStatus",
-		"updateProductStock",
-	}
-	gotQueries := reg.Queries()
-
-	if len(gotQueries) != len(expectedQueries) {
-		t.Fatalf("expected %d queries, got %d", len(expectedQueries), len(gotQueries))
-	}
-
-	for i, want := range expectedQueries {
-		if gotQueries[i] != want {
-			t.Errorf("query[%d]: got %q, want %q", i, gotQueries[i], want)
-		}
-	}
-}
-
-func TestRegistry_LoadFSNonexistentDir(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.LoadFS(os.DirFS("testdata/queries"), "nonexistent")
-	if err == nil {
-		t.Fatal("expected error for nonexistent directory in FS, got nil")
-	}
-
-	errMsg := "glimt: read dir nonexistent: stat nonexistent: no such file or directory"
-	assertErrorContains(t, err, errMsg)
-}
-
-func TestRegistry_LoadFSInvalidQueries(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.LoadFS(os.DirFS("testdata/invalid_queries"), ".")
-	if err == nil {
-		t.Fatal("expected error for invalid queries in FS, got nil")
-	}
-
-	errMsg := "glimt: parse duplicate_names.sql: line 4: duplicate query name \"listUsers\""
-	assertErrorContains(t, err, errMsg)
-}
-
-func TestRegistry_LoadFSEmptyDir(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.LoadFS(os.DirFS("testdata/empty_queries"), ".")
-	if err != nil {
-		t.Fatal("unexpected error walking empty directory in FS:", err)
-	}
-
-	if len(reg.Queries()) != 0 {
-		t.Errorf("expected no queries loaded, got %d", len(reg.Queries()))
-	}
-}
-
-func TestRegistry_Has(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.LoadFile("testdata/queries/users.sql")
-	if err != nil {
-		t.Fatalf("failed to load queries: %v", err)
-	}
-
-	if !reg.Has("insertUser") {
-		t.Error("expected Has to return true for existing query, got false")
-	}
-
-	if reg.Has("nonexistent") {
-		t.Error("expected Has to return false for unknown query, got true")
-	}
-}
-
-func TestRegistry_Queries(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.LoadFile("testdata/queries/users.sql")
-	if err != nil {
-		t.Fatalf("failed to load queries: %v", err)
-	}
-
-	gotQueries := reg.Queries()
-	expectedQueries := []string{
-		"countUsersByStatus", "createUsersTable", "dropUsersTable", "insertUser", "listActiveUsers", "listUsers",
-	}
-
-	if len(gotQueries) != len(expectedQueries) {
-		t.Fatalf("expected %d queries, got %d", len(expectedQueries), len(gotQueries))
-	}
-
-	for i, want := range expectedQueries {
-		if gotQueries[i] != want {
-			t.Errorf("query[%d]: got %q, want %q", i, gotQueries[i], want)
-		}
-	}
-}
-
-func TestRegistry_DynamicFiltering(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.Load("testdata/queries")
-	if err != nil {
-		t.Fatalf("failed to load queries: %v", err)
-	}
-
-	sql, args := reg.MustGet("listUsers").
-		Where(Eq("status", "active")).
-		Where(Gt("created_at", "2023-01-01")).
-		OrderBy("created_at DESC").
-		Limit(10).
-		Build()
-
-	wantSQL := "SELECT * FROM users WHERE status = $1 AND created_at > $2 ORDER BY created_at DESC LIMIT $3"
-	assertSQL(t, sql, wantSQL)
-	assertArgs(t, args, []any{"active", "2023-01-01", 10})
-}
-
-func TestRegistry_Add(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	err := reg.Add("activeUsers", "SELECT * FROM users -- only active\nWHERE deleted_at IS NULL;")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	sql, args := reg.MustGet("activeUsers").Limit(5).Build()
-	assertSQL(t, sql, "SELECT * FROM users\nWHERE deleted_at IS NULL LIMIT $1")
-	assertArgs(t, args, []any{5})
-}
-
-func TestRegistry_AddErrors(t *testing.T) {
+func TestLoadAnnotationMistakes(t *testing.T) {
 	tests := []struct {
-		name    string
-		query   string
-		sql     string
-		wantErr string
+		src  string
+		want string
 	}{
-		{"invalid name", "bad name", "SELECT 1", `glimt: add: invalid query name "bad name"`},
-		{"empty body", "empty", "  -- nothing here\n", "glimt: add empty: empty query body"},
-		{"duplicate", "existing", "SELECT 2", `glimt: duplicate query name "existing" in Add`},
-		{"native placeholder", "native", "SELECT * FROM t WHERE id = $1", `glimt: add native: line 1: native placeholder "$1": use ? instead`},
-		{"annotation", "annotated", "-- :name other\nSELECT 1", `glimt: add annotated: line 1: unexpected annotation ":name"`},
+		{"-- Name: first\nSELECT 1;\n-- name: second\nSELECT 2;",
+			`q.sql:1:1: glimt: malformed annotation "-- Name: first": want "-- name: <name>"`},
+		{"-- name: a\nSELECT 1\n-- name : b\nSELECT 2",
+			`q.sql:3:1: glimt: malformed annotation "-- name : b": want "-- name: <name>"`},
+		{"-- name: a\nSELECT 1\n--NAME: b\nSELECT 2",
+			`q.sql:3:1: glimt: malformed annotation "-- NAME: b": want "-- name: <name>"`},
+		{"SELECT 1\n-- name: a\nSELECT 2", `q.sql:1:1: glimt: SQL before the first "-- name:" annotation`},
+		{"SELECT 1", `q.sql:1:1: glimt: SQL without a "-- name:" annotation`},
+		{"-- name: a\nSELECT 1\nSELECT 2",
+			`q.sql:3:1: glimt: a second statement starts at "SELECT": is a "-- name:" annotation missing or misspelled?`},
+		{"-- name: a\nUPDATE t SET a = 1;\nUPDATE t SET b = 2;",
+			`q.sql:3:1: glimt: a second statement starts at "UPDATE": is a "-- name:" annotation missing or misspelled?`},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			reg := NewRegistry(DialectPostgres)
-			if err := reg.Add("existing", "SELECT 1"); err != nil {
-				t.Fatalf("setup: %v", err)
-			}
+		_, err := Load(mapFS(map[string]string{"q.sql": tt.src}), ".")
+		if err == nil || err.Error() != tt.want {
+			t.Errorf("Load(%q) error = %v\nwant %s", tt.src, err, tt.want)
+		}
 
-			assertErrorContains(t, reg.Add(tt.query, tt.sql), tt.wantErr)
-		})
+		var lerr *LoadError
+		if !errors.As(err, &lerr) {
+			t.Errorf("Load(%q) error is not a *LoadError", tt.src)
+		}
 	}
 }
 
-func TestRegistry_LoadIsAllOrNothing(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-	if err := reg.Add("listUsers", "SELECT 1"); err != nil {
-		t.Fatalf("setup: %v", err)
-	}
+func TestLoadComments(t *testing.T) {
+	reg := mustLoad(t, map[string]string{"q.sql": "-- leading comment\n" +
+		"-- name of the customer is in c.name\n-- name: a\nSELECT c.name FROM c;"})
 
-	err := reg.LoadFile("testdata/queries/users.sql")
-	assertErrorContains(t, err, `glimt: duplicate query name "listUsers" in testdata/queries/users.sql`)
-
-	if reg.Has("insertUser") {
-		t.Error("a failed load must not add any of the file's queries")
+	if got := reg.Names(); !slices.Equal(got, []string{"a"}) {
+		t.Errorf("Names() = %v, want [a]", got)
 	}
 }
 
-func TestRegistry_AdHocQueryIsSanitized(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
-
-	// Without sanitizing, the appended WHERE would land inside the line comment
-	// and the owner filter would silently disappear.
-	sql, args := reg.Query("SELECT * FROM docs -- every document").
-		Where(Eq("owner_id", 7)).
-		Build()
-	assertSQL(t, sql, "SELECT * FROM docs WHERE owner_id = $1")
-	assertArgs(t, args, []any{7})
-
-	sql, _ = reg.Query("SELECT * FROM docs;").Where(Eq("owner_id", 7)).Build()
-	assertSQL(t, sql, "SELECT * FROM docs WHERE owner_id = $1")
+func TestLoadNoQueries(t *testing.T) {
+	for _, files := range []map[string]string{{}, {"a.txt": "-- name: a\nSELECT 1"}, {"a.sql": "-- nothing\n"}} {
+		if _, err := Load(mapFS(files), "."); err == nil || err.Error() != `glimt: no queries in "."` {
+			t.Errorf("Load(%v) error = %v", files, err)
+		}
+	}
 }
 
-func TestRegistry_AdHocUnterminatedIsKeptAsWritten(t *testing.T) {
-	reg := NewRegistry(DialectPostgres)
+func TestGetPanics(t *testing.T) {
+	reg, err := Load(mapFS(map[string]string{"a.sql": "-- name: one\nSELECT 1"}), ".")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	// The database reports the syntax error; glimt does not guess.
-	sql, _ := reg.Query("SELECT 'oops FROM docs").Build()
-	assertSQL(t, sql, "SELECT 'oops FROM docs\n")
+	defer func() {
+		if r := recover(); r != `glimt: no query named "two"` {
+			t.Errorf("recover() = %v", r)
+		}
+	}()
+
+	reg.Get("two")
 }
 
-func TestRegistry_AdHocFallbackEndsLineComment(t *testing.T) {
-	// Under MySQL's NO_BACKSLASH_ESCAPES mode, 'C:\' is a complete string, but
-	// glimt assumes backslash escapes and cannot lex it. The raw fallback must
-	// still keep the appended filter out of the trailing comment.
-	reg := NewRegistry(DialectMySQL)
+func TestLookup(t *testing.T) {
+	reg := mustLoad(t, map[string]string{"a.sql": "-- name: one\nSELECT 1"})
 
-	sql, _ := reg.Query(`SELECT 'C:\' AS root, d.* FROM docs d -- every doc`).
-		Where(Null("d.deleted_at")).
-		Build()
-	assertSQL(t, sql, "SELECT 'C:\\' AS root, d.* FROM docs d -- every doc\n WHERE d.deleted_at IS NULL")
+	if q, ok := reg.Lookup("one"); !ok || q.Name() != "one" {
+		t.Errorf("Lookup(one) = %v, %v", q, ok)
+	}
+
+	if q, ok := reg.Lookup("two"); ok || q != nil {
+		t.Errorf("Lookup(two) = %v, %v; want nil, false", q, ok)
+	}
+}
+
+func TestValidName(t *testing.T) {
+	for name, want := range map[string]bool{
+		"listOrders": true, "_x": true, "a1_b": true, "": false, "1a": false, "a-b": false, "a.b": false, "héllo": false,
+	} {
+		if got := validName(name); got != want {
+			t.Errorf("validName(%q) = %v, want %v", name, got, want)
+		}
+	}
 }

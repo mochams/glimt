@@ -1,28 +1,14 @@
--- :name createOrdersTable
-CREATE TABLE IF NOT EXISTS orders (
-    id          SERIAL PRIMARY KEY,
-    user_id     INT NOT NULL REFERENCES users(id),
-    product_id  INT NOT NULL REFERENCES products(id),
-    quantity    INT NOT NULL DEFAULT 1,
-    total       DECIMAL(10,2) NOT NULL,
-    status      VARCHAR(20) NOT NULL DEFAULT 'pending',
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    deleted_at  TIMESTAMPTZ
-)
+-- Orders.
 
--- :name dropOrdersTable
-DROP TABLE IF EXISTS orders
+-- name: listOrders
+-- Orders of an organization, newest first.
+SELECT o.id, o.total, o.status
+FROM orders o
+WHERE o.org_id = :org
+ORDER BY o.created_at DESC, o.id;
 
--- :name insertOrder
-INSERT INTO orders (user_id, product_id, quantity, total)
-VALUES (?, ?, ?, ?)
-RETURNING id
+-- name: ordersByIDs
+SELECT id, total FROM orders WHERE id IN (:ids) AND org_id = :org;
 
--- :name listOrders
-SELECT * FROM orders
-
--- :name updateOrderStatus
-UPDATE orders SET status = ? WHERE id = ?
-
--- :name softDeleteOrder
-UPDATE orders SET deleted_at = NOW() WHERE id = ?
+-- name: cancelOrder
+UPDATE orders SET status = 'cancelled' WHERE id = :id AND org_id = :org RETURNING id;

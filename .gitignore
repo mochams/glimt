@@ -34,3 +34,10 @@ env.sh
 
 # POcs
 lab
+depr
+
+# Os generated files
+.DS_Store
+
+# Postgres regression suite, fetched by make oracle-corpus
+integration/testdata/regress/
