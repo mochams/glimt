@@ -1,0 +1,5103 @@
+## every clause: as written
+SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a) ORDER BY a LIMIT 10 OFFSET 5 FOR UPDATE
+[]interface {}{1, 2}
+
+## every clause: bound
+SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a) ORDER BY a LIMIT 10 OFFSET 5 FOR UPDATE
+[]interface {}{1, 2}
+
+## every clause: count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, 2}
+
+## every clause: where
+SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a) ORDER BY a LIMIT 10 OFFSET 5 FOR UPDATE
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: where, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: order by
+SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a) ORDER BY z DESC LIMIT 10 OFFSET 5 FOR UPDATE
+[]interface {}{1, 2}
+
+## every clause: order by, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, 2}
+
+## every clause: where, order by
+SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a) ORDER BY z DESC LIMIT 10 OFFSET 5 FOR UPDATE
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: where, order by, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: then by
+SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a) ORDER BY a, y NULLS LAST LIMIT 10 OFFSET 5 FOR UPDATE
+[]interface {}{1, 2}
+
+## every clause: then by, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, 2}
+
+## every clause: where, then by
+SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a) ORDER BY a, y NULLS LAST LIMIT 10 OFFSET 5 FOR UPDATE
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: where, then by, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: limit
+SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a) ORDER BY a LIMIT $3 OFFSET 5 FOR UPDATE
+[]interface {}{1, 2, 10}
+
+## every clause: limit, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, 2}
+
+## every clause: where, limit
+SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a) ORDER BY a LIMIT $6 OFFSET 5 FOR UPDATE
+[]interface {}{1, "w", 8, 9, 2, 10}
+
+## every clause: where, limit, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: order by, limit
+SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a) ORDER BY z DESC LIMIT $3 OFFSET 5 FOR UPDATE
+[]interface {}{1, 2, 10}
+
+## every clause: order by, limit, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, 2}
+
+## every clause: where, order by, limit
+SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a) ORDER BY z DESC LIMIT $6 OFFSET 5 FOR UPDATE
+[]interface {}{1, "w", 8, 9, 2, 10}
+
+## every clause: where, order by, limit, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: then by, limit
+SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a) ORDER BY a, y NULLS LAST LIMIT $3 OFFSET 5 FOR UPDATE
+[]interface {}{1, 2, 10}
+
+## every clause: then by, limit, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, 2}
+
+## every clause: where, then by, limit
+SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a) ORDER BY a, y NULLS LAST LIMIT $6 OFFSET 5 FOR UPDATE
+[]interface {}{1, "w", 8, 9, 2, 10}
+
+## every clause: where, then by, limit, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: offset
+SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a) ORDER BY a LIMIT 10 OFFSET $3 FOR UPDATE
+[]interface {}{1, 2, 20}
+
+## every clause: offset, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, 2}
+
+## every clause: where, offset
+SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a) ORDER BY a LIMIT 10 OFFSET $6 FOR UPDATE
+[]interface {}{1, "w", 8, 9, 2, 20}
+
+## every clause: where, offset, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: order by, offset
+SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a) ORDER BY z DESC LIMIT 10 OFFSET $3 FOR UPDATE
+[]interface {}{1, 2, 20}
+
+## every clause: order by, offset, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, 2}
+
+## every clause: where, order by, offset
+SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a) ORDER BY z DESC LIMIT 10 OFFSET $6 FOR UPDATE
+[]interface {}{1, "w", 8, 9, 2, 20}
+
+## every clause: where, order by, offset, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: then by, offset
+SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a) ORDER BY a, y NULLS LAST LIMIT 10 OFFSET $3 FOR UPDATE
+[]interface {}{1, 2, 20}
+
+## every clause: then by, offset, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, 2}
+
+## every clause: where, then by, offset
+SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a) ORDER BY a, y NULLS LAST LIMIT 10 OFFSET $6 FOR UPDATE
+[]interface {}{1, "w", 8, 9, 2, 20}
+
+## every clause: where, then by, offset, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: limit, offset
+SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a) ORDER BY a LIMIT $3 OFFSET $4 FOR UPDATE
+[]interface {}{1, 2, 10, 20}
+
+## every clause: limit, offset, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, 2}
+
+## every clause: where, limit, offset
+SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a) ORDER BY a LIMIT $6 OFFSET $7 FOR UPDATE
+[]interface {}{1, "w", 8, 9, 2, 10, 20}
+
+## every clause: where, limit, offset, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: order by, limit, offset
+SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a) ORDER BY z DESC LIMIT $3 OFFSET $4 FOR UPDATE
+[]interface {}{1, 2, 10, 20}
+
+## every clause: order by, limit, offset, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, 2}
+
+## every clause: where, order by, limit, offset
+SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a) ORDER BY z DESC LIMIT $6 OFFSET $7 FOR UPDATE
+[]interface {}{1, "w", 8, 9, 2, 10, 20}
+
+## every clause: where, order by, limit, offset, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, "w", 8, 9, 2}
+
+## every clause: then by, limit, offset
+SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a) ORDER BY a, y NULLS LAST LIMIT $3 OFFSET $4 FOR UPDATE
+[]interface {}{1, 2, 10, 20}
+
+## every clause: then by, limit, offset, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE b = $1 GROUP BY a HAVING count(*) > $2 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, 2}
+
+## every clause: where, then by, limit, offset
+SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a) ORDER BY a, y NULLS LAST LIMIT $6 OFFSET $7 FOR UPDATE
+[]interface {}{1, "w", 8, 9, 2, 10, 20}
+
+## every clause: where, then by, limit, offset, count
+SELECT count(*) FROM (SELECT DISTINCT a, count(*) FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) GROUP BY a HAVING count(*) > $5 WINDOW w AS (PARTITION BY a)) AS t
+[]interface {}{1, "w", 8, 9, 2}
+
+## no clause: as written
+SELECT 1
+[]interface {}(nil)
+
+## no clause: bound
+SELECT 1
+[]interface {}(nil)
+
+## no clause: count
+SELECT count(*) FROM (SELECT 1) AS t
+[]interface {}{}
+
+## no clause: where
+SELECT 1 WHERE z = $1 AND y IN ($2, $3)
+[]interface {}{"w", 8, 9}
+
+## no clause: where, count
+SELECT count(*) FROM (SELECT 1 WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## no clause: order by
+SELECT 1 ORDER BY z DESC
+[]interface {}{}
+
+## no clause: order by, count
+SELECT count(*) FROM (SELECT 1) AS t
+[]interface {}{}
+
+## no clause: where, order by
+SELECT 1 WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC
+[]interface {}{"w", 8, 9}
+
+## no clause: where, order by, count
+SELECT count(*) FROM (SELECT 1 WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## no clause: then by
+SELECT 1 ORDER BY y NULLS LAST
+[]interface {}{}
+
+## no clause: then by, count
+SELECT count(*) FROM (SELECT 1) AS t
+[]interface {}{}
+
+## no clause: where, then by
+SELECT 1 WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST
+[]interface {}{"w", 8, 9}
+
+## no clause: where, then by, count
+SELECT count(*) FROM (SELECT 1 WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## no clause: limit
+SELECT 1 LIMIT $1
+[]interface {}{10}
+
+## no clause: limit, count
+SELECT count(*) FROM (SELECT 1) AS t
+[]interface {}{}
+
+## no clause: where, limit
+SELECT 1 WHERE z = $1 AND y IN ($2, $3) LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## no clause: where, limit, count
+SELECT count(*) FROM (SELECT 1 WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## no clause: order by, limit
+SELECT 1 ORDER BY z DESC LIMIT $1
+[]interface {}{10}
+
+## no clause: order by, limit, count
+SELECT count(*) FROM (SELECT 1) AS t
+[]interface {}{}
+
+## no clause: where, order by, limit
+SELECT 1 WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## no clause: where, order by, limit, count
+SELECT count(*) FROM (SELECT 1 WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## no clause: then by, limit
+SELECT 1 ORDER BY y NULLS LAST LIMIT $1
+[]interface {}{10}
+
+## no clause: then by, limit, count
+SELECT count(*) FROM (SELECT 1) AS t
+[]interface {}{}
+
+## no clause: where, then by, limit
+SELECT 1 WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## no clause: where, then by, limit, count
+SELECT count(*) FROM (SELECT 1 WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## no clause: offset
+SELECT 1 OFFSET $1
+[]interface {}{20}
+
+## no clause: offset, count
+SELECT count(*) FROM (SELECT 1) AS t
+[]interface {}{}
+
+## no clause: where, offset
+SELECT 1 WHERE z = $1 AND y IN ($2, $3) OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## no clause: where, offset, count
+SELECT count(*) FROM (SELECT 1 WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## no clause: order by, offset
+SELECT 1 ORDER BY z DESC OFFSET $1
+[]interface {}{20}
+
+## no clause: order by, offset, count
+SELECT count(*) FROM (SELECT 1) AS t
+[]interface {}{}
+
+## no clause: where, order by, offset
+SELECT 1 WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## no clause: where, order by, offset, count
+SELECT count(*) FROM (SELECT 1 WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## no clause: then by, offset
+SELECT 1 ORDER BY y NULLS LAST OFFSET $1
+[]interface {}{20}
+
+## no clause: then by, offset, count
+SELECT count(*) FROM (SELECT 1) AS t
+[]interface {}{}
+
+## no clause: where, then by, offset
+SELECT 1 WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## no clause: where, then by, offset, count
+SELECT count(*) FROM (SELECT 1 WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## no clause: limit, offset
+SELECT 1 LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## no clause: limit, offset, count
+SELECT count(*) FROM (SELECT 1) AS t
+[]interface {}{}
+
+## no clause: where, limit, offset
+SELECT 1 WHERE z = $1 AND y IN ($2, $3) LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## no clause: where, limit, offset, count
+SELECT count(*) FROM (SELECT 1 WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## no clause: order by, limit, offset
+SELECT 1 ORDER BY z DESC LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## no clause: order by, limit, offset, count
+SELECT count(*) FROM (SELECT 1) AS t
+[]interface {}{}
+
+## no clause: where, order by, limit, offset
+SELECT 1 WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## no clause: where, order by, limit, offset, count
+SELECT count(*) FROM (SELECT 1 WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## no clause: then by, limit, offset
+SELECT 1 ORDER BY y NULLS LAST LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## no clause: then by, limit, offset, count
+SELECT count(*) FROM (SELECT 1) AS t
+[]interface {}{}
+
+## no clause: where, then by, limit, offset
+SELECT 1 WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## no clause: where, then by, limit, offset, count
+SELECT count(*) FROM (SELECT 1 WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## from only: as written
+SELECT a FROM t
+[]interface {}(nil)
+
+## from only: bound
+SELECT a FROM t
+[]interface {}(nil)
+
+## from only: count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## from only: where
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)
+[]interface {}{"w", 8, 9}
+
+## from only: where, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## from only: order by
+SELECT a FROM t ORDER BY z DESC
+[]interface {}{}
+
+## from only: order by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## from only: where, order by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC
+[]interface {}{"w", 8, 9}
+
+## from only: where, order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## from only: then by
+SELECT a FROM t ORDER BY y NULLS LAST
+[]interface {}{}
+
+## from only: then by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## from only: where, then by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST
+[]interface {}{"w", 8, 9}
+
+## from only: where, then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## from only: limit
+SELECT a FROM t LIMIT $1
+[]interface {}{10}
+
+## from only: limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## from only: where, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## from only: where, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## from only: order by, limit
+SELECT a FROM t ORDER BY z DESC LIMIT $1
+[]interface {}{10}
+
+## from only: order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## from only: where, order by, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## from only: where, order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## from only: then by, limit
+SELECT a FROM t ORDER BY y NULLS LAST LIMIT $1
+[]interface {}{10}
+
+## from only: then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## from only: where, then by, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## from only: where, then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## from only: offset
+SELECT a FROM t OFFSET $1
+[]interface {}{20}
+
+## from only: offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## from only: where, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## from only: where, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## from only: order by, offset
+SELECT a FROM t ORDER BY z DESC OFFSET $1
+[]interface {}{20}
+
+## from only: order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## from only: where, order by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## from only: where, order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## from only: then by, offset
+SELECT a FROM t ORDER BY y NULLS LAST OFFSET $1
+[]interface {}{20}
+
+## from only: then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## from only: where, then by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## from only: where, then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## from only: limit, offset
+SELECT a FROM t LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## from only: limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## from only: where, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## from only: where, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## from only: order by, limit, offset
+SELECT a FROM t ORDER BY z DESC LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## from only: order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## from only: where, order by, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## from only: where, order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## from only: then by, limit, offset
+SELECT a FROM t ORDER BY y NULLS LAST LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## from only: then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## from only: where, then by, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## from only: where, then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## union: as written
+SELECT a FROM t UNION SELECT a FROM u
+[]interface {}(nil)
+
+## union: bound
+SELECT a FROM t UNION SELECT a FROM u
+[]interface {}(nil)
+
+## union: count
+SELECT count(*) FROM (SELECT a FROM t UNION SELECT a FROM u) AS t
+[]interface {}{}
+
+## union: where
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: where, count
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: order by
+SELECT a FROM t UNION SELECT a FROM u ORDER BY z DESC
+[]interface {}{}
+
+## union: order by, count
+SELECT count(*) FROM (SELECT a FROM t UNION SELECT a FROM u) AS t
+[]interface {}{}
+
+## union: where, order by
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: where, order by, count
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: then by
+SELECT a FROM t UNION SELECT a FROM u ORDER BY y NULLS LAST
+[]interface {}{}
+
+## union: then by, count
+SELECT count(*) FROM (SELECT a FROM t UNION SELECT a FROM u) AS t
+[]interface {}{}
+
+## union: where, then by
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: where, then by, count
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: limit
+SELECT a FROM t UNION SELECT a FROM u LIMIT $1
+[]interface {}{10}
+
+## union: limit, count
+SELECT count(*) FROM (SELECT a FROM t UNION SELECT a FROM u) AS t
+[]interface {}{}
+
+## union: where, limit
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: where, limit, count
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: order by, limit
+SELECT a FROM t UNION SELECT a FROM u ORDER BY z DESC LIMIT $1
+[]interface {}{10}
+
+## union: order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t UNION SELECT a FROM u) AS t
+[]interface {}{}
+
+## union: where, order by, limit
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: where, order by, limit, count
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: then by, limit
+SELECT a FROM t UNION SELECT a FROM u ORDER BY y NULLS LAST LIMIT $1
+[]interface {}{10}
+
+## union: then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t UNION SELECT a FROM u) AS t
+[]interface {}{}
+
+## union: where, then by, limit
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: where, then by, limit, count
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: offset
+SELECT a FROM t UNION SELECT a FROM u OFFSET $1
+[]interface {}{20}
+
+## union: offset, count
+SELECT count(*) FROM (SELECT a FROM t UNION SELECT a FROM u) AS t
+[]interface {}{}
+
+## union: where, offset
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: where, offset, count
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: order by, offset
+SELECT a FROM t UNION SELECT a FROM u ORDER BY z DESC OFFSET $1
+[]interface {}{20}
+
+## union: order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t UNION SELECT a FROM u) AS t
+[]interface {}{}
+
+## union: where, order by, offset
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: where, order by, offset, count
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: then by, offset
+SELECT a FROM t UNION SELECT a FROM u ORDER BY y NULLS LAST OFFSET $1
+[]interface {}{20}
+
+## union: then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t UNION SELECT a FROM u) AS t
+[]interface {}{}
+
+## union: where, then by, offset
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: where, then by, offset, count
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: limit, offset
+SELECT a FROM t UNION SELECT a FROM u LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## union: limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t UNION SELECT a FROM u) AS t
+[]interface {}{}
+
+## union: where, limit, offset
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: where, limit, offset, count
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: order by, limit, offset
+SELECT a FROM t UNION SELECT a FROM u ORDER BY z DESC LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## union: order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t UNION SELECT a FROM u) AS t
+[]interface {}{}
+
+## union: where, order by, limit, offset
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: where, order by, limit, offset, count
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: then by, limit, offset
+SELECT a FROM t UNION SELECT a FROM u ORDER BY y NULLS LAST LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## union: then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t UNION SELECT a FROM u) AS t
+[]interface {}{}
+
+## union: where, then by, limit, offset
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union: where, then by, limit, offset, count
+error: glimt: query "union": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: as written
+SELECT a FROM t UNION ALL SELECT a FROM u ORDER BY 1 LIMIT 3
+[]interface {}(nil)
+
+## union with order: bound
+SELECT a FROM t UNION ALL SELECT a FROM u ORDER BY 1 LIMIT 3
+[]interface {}(nil)
+
+## union with order: count
+SELECT count(*) FROM (SELECT a FROM t UNION ALL SELECT a FROM u) AS t
+[]interface {}{}
+
+## union with order: where
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: where, count
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: order by
+SELECT a FROM t UNION ALL SELECT a FROM u ORDER BY z DESC LIMIT 3
+[]interface {}{}
+
+## union with order: order by, count
+SELECT count(*) FROM (SELECT a FROM t UNION ALL SELECT a FROM u) AS t
+[]interface {}{}
+
+## union with order: where, order by
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: where, order by, count
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: then by
+SELECT a FROM t UNION ALL SELECT a FROM u ORDER BY 1, y NULLS LAST LIMIT 3
+[]interface {}{}
+
+## union with order: then by, count
+SELECT count(*) FROM (SELECT a FROM t UNION ALL SELECT a FROM u) AS t
+[]interface {}{}
+
+## union with order: where, then by
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: where, then by, count
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: limit
+SELECT a FROM t UNION ALL SELECT a FROM u ORDER BY 1 LIMIT $1
+[]interface {}{10}
+
+## union with order: limit, count
+SELECT count(*) FROM (SELECT a FROM t UNION ALL SELECT a FROM u) AS t
+[]interface {}{}
+
+## union with order: where, limit
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: where, limit, count
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: order by, limit
+SELECT a FROM t UNION ALL SELECT a FROM u ORDER BY z DESC LIMIT $1
+[]interface {}{10}
+
+## union with order: order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t UNION ALL SELECT a FROM u) AS t
+[]interface {}{}
+
+## union with order: where, order by, limit
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: where, order by, limit, count
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: then by, limit
+SELECT a FROM t UNION ALL SELECT a FROM u ORDER BY 1, y NULLS LAST LIMIT $1
+[]interface {}{10}
+
+## union with order: then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t UNION ALL SELECT a FROM u) AS t
+[]interface {}{}
+
+## union with order: where, then by, limit
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: where, then by, limit, count
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: offset
+SELECT a FROM t UNION ALL SELECT a FROM u ORDER BY 1 LIMIT 3 OFFSET $1
+[]interface {}{20}
+
+## union with order: offset, count
+SELECT count(*) FROM (SELECT a FROM t UNION ALL SELECT a FROM u) AS t
+[]interface {}{}
+
+## union with order: where, offset
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: where, offset, count
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: order by, offset
+SELECT a FROM t UNION ALL SELECT a FROM u ORDER BY z DESC LIMIT 3 OFFSET $1
+[]interface {}{20}
+
+## union with order: order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t UNION ALL SELECT a FROM u) AS t
+[]interface {}{}
+
+## union with order: where, order by, offset
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: where, order by, offset, count
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: then by, offset
+SELECT a FROM t UNION ALL SELECT a FROM u ORDER BY 1, y NULLS LAST LIMIT 3 OFFSET $1
+[]interface {}{20}
+
+## union with order: then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t UNION ALL SELECT a FROM u) AS t
+[]interface {}{}
+
+## union with order: where, then by, offset
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: where, then by, offset, count
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: limit, offset
+SELECT a FROM t UNION ALL SELECT a FROM u ORDER BY 1 LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## union with order: limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t UNION ALL SELECT a FROM u) AS t
+[]interface {}{}
+
+## union with order: where, limit, offset
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: where, limit, offset, count
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: order by, limit, offset
+SELECT a FROM t UNION ALL SELECT a FROM u ORDER BY z DESC LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## union with order: order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t UNION ALL SELECT a FROM u) AS t
+[]interface {}{}
+
+## union with order: where, order by, limit, offset
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: where, order by, limit, offset, count
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: then by, limit, offset
+SELECT a FROM t UNION ALL SELECT a FROM u ORDER BY 1, y NULLS LAST LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## union with order: then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t UNION ALL SELECT a FROM u) AS t
+[]interface {}{}
+
+## union with order: where, then by, limit, offset
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## union with order: where, then by, limit, offset, count
+error: glimt: query "union_with_order": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: as written
+VALUES (1), (2)
+[]interface {}(nil)
+
+## values: bound
+VALUES (1), (2)
+[]interface {}(nil)
+
+## values: count
+SELECT count(*) FROM (VALUES (1), (2)) AS t
+[]interface {}{}
+
+## values: where
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: where, count
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: order by
+VALUES (1), (2) ORDER BY z DESC
+[]interface {}{}
+
+## values: order by, count
+SELECT count(*) FROM (VALUES (1), (2)) AS t
+[]interface {}{}
+
+## values: where, order by
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: where, order by, count
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: then by
+VALUES (1), (2) ORDER BY y NULLS LAST
+[]interface {}{}
+
+## values: then by, count
+SELECT count(*) FROM (VALUES (1), (2)) AS t
+[]interface {}{}
+
+## values: where, then by
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: where, then by, count
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: limit
+VALUES (1), (2) LIMIT $1
+[]interface {}{10}
+
+## values: limit, count
+SELECT count(*) FROM (VALUES (1), (2)) AS t
+[]interface {}{}
+
+## values: where, limit
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: where, limit, count
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: order by, limit
+VALUES (1), (2) ORDER BY z DESC LIMIT $1
+[]interface {}{10}
+
+## values: order by, limit, count
+SELECT count(*) FROM (VALUES (1), (2)) AS t
+[]interface {}{}
+
+## values: where, order by, limit
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: where, order by, limit, count
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: then by, limit
+VALUES (1), (2) ORDER BY y NULLS LAST LIMIT $1
+[]interface {}{10}
+
+## values: then by, limit, count
+SELECT count(*) FROM (VALUES (1), (2)) AS t
+[]interface {}{}
+
+## values: where, then by, limit
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: where, then by, limit, count
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: offset
+VALUES (1), (2) OFFSET $1
+[]interface {}{20}
+
+## values: offset, count
+SELECT count(*) FROM (VALUES (1), (2)) AS t
+[]interface {}{}
+
+## values: where, offset
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: where, offset, count
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: order by, offset
+VALUES (1), (2) ORDER BY z DESC OFFSET $1
+[]interface {}{20}
+
+## values: order by, offset, count
+SELECT count(*) FROM (VALUES (1), (2)) AS t
+[]interface {}{}
+
+## values: where, order by, offset
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: where, order by, offset, count
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: then by, offset
+VALUES (1), (2) ORDER BY y NULLS LAST OFFSET $1
+[]interface {}{20}
+
+## values: then by, offset, count
+SELECT count(*) FROM (VALUES (1), (2)) AS t
+[]interface {}{}
+
+## values: where, then by, offset
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: where, then by, offset, count
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: limit, offset
+VALUES (1), (2) LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## values: limit, offset, count
+SELECT count(*) FROM (VALUES (1), (2)) AS t
+[]interface {}{}
+
+## values: where, limit, offset
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: where, limit, offset, count
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: order by, limit, offset
+VALUES (1), (2) ORDER BY z DESC LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## values: order by, limit, offset, count
+SELECT count(*) FROM (VALUES (1), (2)) AS t
+[]interface {}{}
+
+## values: where, order by, limit, offset
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: where, order by, limit, offset, count
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: then by, limit, offset
+VALUES (1), (2) ORDER BY y NULLS LAST LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## values: then by, limit, offset, count
+SELECT count(*) FROM (VALUES (1), (2)) AS t
+[]interface {}{}
+
+## values: where, then by, limit, offset
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## values: where, then by, limit, offset, count
+error: glimt: query "values": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: as written
+TABLE t
+[]interface {}(nil)
+
+## table: bound
+TABLE t
+[]interface {}(nil)
+
+## table: count
+SELECT count(*) FROM (TABLE t) AS t
+[]interface {}{}
+
+## table: where
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: where, count
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: order by
+TABLE t ORDER BY z DESC
+[]interface {}{}
+
+## table: order by, count
+SELECT count(*) FROM (TABLE t) AS t
+[]interface {}{}
+
+## table: where, order by
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: where, order by, count
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: then by
+TABLE t ORDER BY y NULLS LAST
+[]interface {}{}
+
+## table: then by, count
+SELECT count(*) FROM (TABLE t) AS t
+[]interface {}{}
+
+## table: where, then by
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: where, then by, count
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: limit
+TABLE t LIMIT $1
+[]interface {}{10}
+
+## table: limit, count
+SELECT count(*) FROM (TABLE t) AS t
+[]interface {}{}
+
+## table: where, limit
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: where, limit, count
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: order by, limit
+TABLE t ORDER BY z DESC LIMIT $1
+[]interface {}{10}
+
+## table: order by, limit, count
+SELECT count(*) FROM (TABLE t) AS t
+[]interface {}{}
+
+## table: where, order by, limit
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: where, order by, limit, count
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: then by, limit
+TABLE t ORDER BY y NULLS LAST LIMIT $1
+[]interface {}{10}
+
+## table: then by, limit, count
+SELECT count(*) FROM (TABLE t) AS t
+[]interface {}{}
+
+## table: where, then by, limit
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: where, then by, limit, count
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: offset
+TABLE t OFFSET $1
+[]interface {}{20}
+
+## table: offset, count
+SELECT count(*) FROM (TABLE t) AS t
+[]interface {}{}
+
+## table: where, offset
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: where, offset, count
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: order by, offset
+TABLE t ORDER BY z DESC OFFSET $1
+[]interface {}{20}
+
+## table: order by, offset, count
+SELECT count(*) FROM (TABLE t) AS t
+[]interface {}{}
+
+## table: where, order by, offset
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: where, order by, offset, count
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: then by, offset
+TABLE t ORDER BY y NULLS LAST OFFSET $1
+[]interface {}{20}
+
+## table: then by, offset, count
+SELECT count(*) FROM (TABLE t) AS t
+[]interface {}{}
+
+## table: where, then by, offset
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: where, then by, offset, count
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: limit, offset
+TABLE t LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## table: limit, offset, count
+SELECT count(*) FROM (TABLE t) AS t
+[]interface {}{}
+
+## table: where, limit, offset
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: where, limit, offset, count
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: order by, limit, offset
+TABLE t ORDER BY z DESC LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## table: order by, limit, offset, count
+SELECT count(*) FROM (TABLE t) AS t
+[]interface {}{}
+
+## table: where, order by, limit, offset
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: where, order by, limit, offset, count
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: then by, limit, offset
+TABLE t ORDER BY y NULLS LAST LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## table: then by, limit, offset, count
+SELECT count(*) FROM (TABLE t) AS t
+[]interface {}{}
+
+## table: where, then by, limit, offset
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## table: where, then by, limit, offset, count
+error: glimt: query "table": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: as written
+(SELECT a FROM t WHERE p) ORDER BY a
+[]interface {}(nil)
+
+## parenthesized: bound
+(SELECT a FROM t WHERE p) ORDER BY a
+[]interface {}(nil)
+
+## parenthesized: count
+SELECT count(*) FROM ((SELECT a FROM t WHERE p)) AS t
+[]interface {}{}
+
+## parenthesized: where
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: where, count
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: order by
+(SELECT a FROM t WHERE p) ORDER BY z DESC
+[]interface {}{}
+
+## parenthesized: order by, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE p)) AS t
+[]interface {}{}
+
+## parenthesized: where, order by
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: where, order by, count
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: then by
+(SELECT a FROM t WHERE p) ORDER BY a, y NULLS LAST
+[]interface {}{}
+
+## parenthesized: then by, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE p)) AS t
+[]interface {}{}
+
+## parenthesized: where, then by
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: where, then by, count
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: limit
+(SELECT a FROM t WHERE p) ORDER BY a LIMIT $1
+[]interface {}{10}
+
+## parenthesized: limit, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE p)) AS t
+[]interface {}{}
+
+## parenthesized: where, limit
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: where, limit, count
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: order by, limit
+(SELECT a FROM t WHERE p) ORDER BY z DESC LIMIT $1
+[]interface {}{10}
+
+## parenthesized: order by, limit, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE p)) AS t
+[]interface {}{}
+
+## parenthesized: where, order by, limit
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: where, order by, limit, count
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: then by, limit
+(SELECT a FROM t WHERE p) ORDER BY a, y NULLS LAST LIMIT $1
+[]interface {}{10}
+
+## parenthesized: then by, limit, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE p)) AS t
+[]interface {}{}
+
+## parenthesized: where, then by, limit
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: where, then by, limit, count
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: offset
+(SELECT a FROM t WHERE p) ORDER BY a OFFSET $1
+[]interface {}{20}
+
+## parenthesized: offset, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE p)) AS t
+[]interface {}{}
+
+## parenthesized: where, offset
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: where, offset, count
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: order by, offset
+(SELECT a FROM t WHERE p) ORDER BY z DESC OFFSET $1
+[]interface {}{20}
+
+## parenthesized: order by, offset, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE p)) AS t
+[]interface {}{}
+
+## parenthesized: where, order by, offset
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: where, order by, offset, count
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: then by, offset
+(SELECT a FROM t WHERE p) ORDER BY a, y NULLS LAST OFFSET $1
+[]interface {}{20}
+
+## parenthesized: then by, offset, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE p)) AS t
+[]interface {}{}
+
+## parenthesized: where, then by, offset
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: where, then by, offset, count
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: limit, offset
+(SELECT a FROM t WHERE p) ORDER BY a LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## parenthesized: limit, offset, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE p)) AS t
+[]interface {}{}
+
+## parenthesized: where, limit, offset
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: where, limit, offset, count
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: order by, limit, offset
+(SELECT a FROM t WHERE p) ORDER BY z DESC LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## parenthesized: order by, limit, offset, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE p)) AS t
+[]interface {}{}
+
+## parenthesized: where, order by, limit, offset
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: where, order by, limit, offset, count
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: then by, limit, offset
+(SELECT a FROM t WHERE p) ORDER BY a, y NULLS LAST LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## parenthesized: then by, limit, offset, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE p)) AS t
+[]interface {}{}
+
+## parenthesized: where, then by, limit, offset
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized: where, then by, limit, offset, count
+error: glimt: query "parenthesized": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: as written
+(SELECT a FROM t LIMIT 5)
+[]interface {}(nil)
+
+## parenthesized with limit: bound
+(SELECT a FROM t LIMIT 5)
+[]interface {}(nil)
+
+## parenthesized with limit: count
+SELECT count(*) FROM ((SELECT a FROM t)) AS t
+[]interface {}{}
+
+## parenthesized with limit: where
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: where, count
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: order by
+(SELECT a FROM t LIMIT 5) ORDER BY z DESC
+[]interface {}{}
+
+## parenthesized with limit: order by, count
+SELECT count(*) FROM ((SELECT a FROM t)) AS t
+[]interface {}{}
+
+## parenthesized with limit: where, order by
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: where, order by, count
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: then by
+(SELECT a FROM t LIMIT 5) ORDER BY y NULLS LAST
+[]interface {}{}
+
+## parenthesized with limit: then by, count
+SELECT count(*) FROM ((SELECT a FROM t)) AS t
+[]interface {}{}
+
+## parenthesized with limit: where, then by
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: where, then by, count
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: limit
+(SELECT a FROM t LIMIT $1)
+[]interface {}{10}
+
+## parenthesized with limit: limit, count
+SELECT count(*) FROM ((SELECT a FROM t)) AS t
+[]interface {}{}
+
+## parenthesized with limit: where, limit
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: where, limit, count
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: order by, limit
+(SELECT a FROM t LIMIT $1) ORDER BY z DESC
+[]interface {}{10}
+
+## parenthesized with limit: order by, limit, count
+SELECT count(*) FROM ((SELECT a FROM t)) AS t
+[]interface {}{}
+
+## parenthesized with limit: where, order by, limit
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: where, order by, limit, count
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: then by, limit
+(SELECT a FROM t LIMIT $1) ORDER BY y NULLS LAST
+[]interface {}{10}
+
+## parenthesized with limit: then by, limit, count
+SELECT count(*) FROM ((SELECT a FROM t)) AS t
+[]interface {}{}
+
+## parenthesized with limit: where, then by, limit
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: where, then by, limit, count
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: offset
+(SELECT a FROM t LIMIT 5 OFFSET $1)
+[]interface {}{20}
+
+## parenthesized with limit: offset, count
+SELECT count(*) FROM ((SELECT a FROM t)) AS t
+[]interface {}{}
+
+## parenthesized with limit: where, offset
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: where, offset, count
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: order by, offset
+(SELECT a FROM t LIMIT 5 OFFSET $1) ORDER BY z DESC
+[]interface {}{20}
+
+## parenthesized with limit: order by, offset, count
+SELECT count(*) FROM ((SELECT a FROM t)) AS t
+[]interface {}{}
+
+## parenthesized with limit: where, order by, offset
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: where, order by, offset, count
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: then by, offset
+(SELECT a FROM t LIMIT 5 OFFSET $1) ORDER BY y NULLS LAST
+[]interface {}{20}
+
+## parenthesized with limit: then by, offset, count
+SELECT count(*) FROM ((SELECT a FROM t)) AS t
+[]interface {}{}
+
+## parenthesized with limit: where, then by, offset
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: where, then by, offset, count
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: limit, offset
+(SELECT a FROM t LIMIT $1 OFFSET $2)
+[]interface {}{10, 20}
+
+## parenthesized with limit: limit, offset, count
+SELECT count(*) FROM ((SELECT a FROM t)) AS t
+[]interface {}{}
+
+## parenthesized with limit: where, limit, offset
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: where, limit, offset, count
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: order by, limit, offset
+(SELECT a FROM t LIMIT $1 OFFSET $2) ORDER BY z DESC
+[]interface {}{10, 20}
+
+## parenthesized with limit: order by, limit, offset, count
+SELECT count(*) FROM ((SELECT a FROM t)) AS t
+[]interface {}{}
+
+## parenthesized with limit: where, order by, limit, offset
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: where, order by, limit, offset, count
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: then by, limit, offset
+(SELECT a FROM t LIMIT $1 OFFSET $2) ORDER BY y NULLS LAST
+[]interface {}{10, 20}
+
+## parenthesized with limit: then by, limit, offset, count
+SELECT count(*) FROM ((SELECT a FROM t)) AS t
+[]interface {}{}
+
+## parenthesized with limit: where, then by, limit, offset
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with limit: where, then by, limit, offset, count
+error: glimt: query "parenthesized_with_limit": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: as written
+((SELECT a FROM t ORDER BY a) OFFSET 2 FOR UPDATE)
+[]interface {}(nil)
+
+## parenthesized with order and offset: bound
+((SELECT a FROM t ORDER BY a) OFFSET 2 FOR UPDATE)
+[]interface {}(nil)
+
+## parenthesized with order and offset: count
+SELECT count(*) FROM (((SELECT a FROM t))) AS t
+[]interface {}{}
+
+## parenthesized with order and offset: where
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: where, count
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: order by
+((SELECT a FROM t ORDER BY z DESC) OFFSET 2 FOR UPDATE)
+[]interface {}{}
+
+## parenthesized with order and offset: order by, count
+SELECT count(*) FROM (((SELECT a FROM t))) AS t
+[]interface {}{}
+
+## parenthesized with order and offset: where, order by
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: where, order by, count
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: then by
+((SELECT a FROM t ORDER BY a, y NULLS LAST) OFFSET 2 FOR UPDATE)
+[]interface {}{}
+
+## parenthesized with order and offset: then by, count
+SELECT count(*) FROM (((SELECT a FROM t))) AS t
+[]interface {}{}
+
+## parenthesized with order and offset: where, then by
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: where, then by, count
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: limit
+((SELECT a FROM t ORDER BY a) OFFSET 2 LIMIT $1 FOR UPDATE)
+[]interface {}{10}
+
+## parenthesized with order and offset: limit, count
+SELECT count(*) FROM (((SELECT a FROM t))) AS t
+[]interface {}{}
+
+## parenthesized with order and offset: where, limit
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: where, limit, count
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: order by, limit
+((SELECT a FROM t ORDER BY z DESC) OFFSET 2 LIMIT $1 FOR UPDATE)
+[]interface {}{10}
+
+## parenthesized with order and offset: order by, limit, count
+SELECT count(*) FROM (((SELECT a FROM t))) AS t
+[]interface {}{}
+
+## parenthesized with order and offset: where, order by, limit
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: where, order by, limit, count
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: then by, limit
+((SELECT a FROM t ORDER BY a, y NULLS LAST) OFFSET 2 LIMIT $1 FOR UPDATE)
+[]interface {}{10}
+
+## parenthesized with order and offset: then by, limit, count
+SELECT count(*) FROM (((SELECT a FROM t))) AS t
+[]interface {}{}
+
+## parenthesized with order and offset: where, then by, limit
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: where, then by, limit, count
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: offset
+((SELECT a FROM t ORDER BY a) OFFSET $1 FOR UPDATE)
+[]interface {}{20}
+
+## parenthesized with order and offset: offset, count
+SELECT count(*) FROM (((SELECT a FROM t))) AS t
+[]interface {}{}
+
+## parenthesized with order and offset: where, offset
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: where, offset, count
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: order by, offset
+((SELECT a FROM t ORDER BY z DESC) OFFSET $1 FOR UPDATE)
+[]interface {}{20}
+
+## parenthesized with order and offset: order by, offset, count
+SELECT count(*) FROM (((SELECT a FROM t))) AS t
+[]interface {}{}
+
+## parenthesized with order and offset: where, order by, offset
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: where, order by, offset, count
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: then by, offset
+((SELECT a FROM t ORDER BY a, y NULLS LAST) OFFSET $1 FOR UPDATE)
+[]interface {}{20}
+
+## parenthesized with order and offset: then by, offset, count
+SELECT count(*) FROM (((SELECT a FROM t))) AS t
+[]interface {}{}
+
+## parenthesized with order and offset: where, then by, offset
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: where, then by, offset, count
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: limit, offset
+((SELECT a FROM t ORDER BY a) OFFSET $1 LIMIT $2 FOR UPDATE)
+[]interface {}{20, 10}
+
+## parenthesized with order and offset: limit, offset, count
+SELECT count(*) FROM (((SELECT a FROM t))) AS t
+[]interface {}{}
+
+## parenthesized with order and offset: where, limit, offset
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: where, limit, offset, count
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: order by, limit, offset
+((SELECT a FROM t ORDER BY z DESC) OFFSET $1 LIMIT $2 FOR UPDATE)
+[]interface {}{20, 10}
+
+## parenthesized with order and offset: order by, limit, offset, count
+SELECT count(*) FROM (((SELECT a FROM t))) AS t
+[]interface {}{}
+
+## parenthesized with order and offset: where, order by, limit, offset
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: where, order by, limit, offset, count
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: then by, limit, offset
+((SELECT a FROM t ORDER BY a, y NULLS LAST) OFFSET $1 LIMIT $2 FOR UPDATE)
+[]interface {}{20, 10}
+
+## parenthesized with order and offset: then by, limit, offset, count
+SELECT count(*) FROM (((SELECT a FROM t))) AS t
+[]interface {}{}
+
+## parenthesized with order and offset: where, then by, limit, offset
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized with order and offset: where, then by, limit, offset, count
+error: glimt: query "parenthesized_with_order_and_offset": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: as written
+(SELECT a FROM t WHERE b = $1 LIMIT $2) ORDER BY a
+[]interface {}{1, 2}
+
+## parenthesized limit with order outside: bound
+(SELECT a FROM t WHERE b = $1 LIMIT $2) ORDER BY a
+[]interface {}{1, 2}
+
+## parenthesized limit with order outside: count
+SELECT count(*) FROM ((SELECT a FROM t WHERE b = $1)) AS t
+[]interface {}{1}
+
+## parenthesized limit with order outside: where
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: where, count
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: order by
+(SELECT a FROM t WHERE b = $1 LIMIT $2) ORDER BY z DESC
+[]interface {}{1, 2}
+
+## parenthesized limit with order outside: order by, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE b = $1)) AS t
+[]interface {}{1}
+
+## parenthesized limit with order outside: where, order by
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: where, order by, count
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: then by
+(SELECT a FROM t WHERE b = $1 LIMIT $2) ORDER BY a, y NULLS LAST
+[]interface {}{1, 2}
+
+## parenthesized limit with order outside: then by, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE b = $1)) AS t
+[]interface {}{1}
+
+## parenthesized limit with order outside: where, then by
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: where, then by, count
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: limit
+error: glimt: query "parenthesized_limit_with_order_outside": can't replace a LIMIT that holds a param
+
+## parenthesized limit with order outside: limit, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE b = $1)) AS t
+[]interface {}{1}
+
+## parenthesized limit with order outside: where, limit
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: where, limit, count
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: order by, limit
+error: glimt: query "parenthesized_limit_with_order_outside": can't replace a LIMIT that holds a param
+
+## parenthesized limit with order outside: order by, limit, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE b = $1)) AS t
+[]interface {}{1}
+
+## parenthesized limit with order outside: where, order by, limit
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: where, order by, limit, count
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: then by, limit
+error: glimt: query "parenthesized_limit_with_order_outside": can't replace a LIMIT that holds a param
+
+## parenthesized limit with order outside: then by, limit, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE b = $1)) AS t
+[]interface {}{1}
+
+## parenthesized limit with order outside: where, then by, limit
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: where, then by, limit, count
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: offset
+(SELECT a FROM t WHERE b = $1 LIMIT $2 OFFSET $3) ORDER BY a
+[]interface {}{1, 2, 20}
+
+## parenthesized limit with order outside: offset, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE b = $1)) AS t
+[]interface {}{1}
+
+## parenthesized limit with order outside: where, offset
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: where, offset, count
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: order by, offset
+(SELECT a FROM t WHERE b = $1 LIMIT $2 OFFSET $3) ORDER BY z DESC
+[]interface {}{1, 2, 20}
+
+## parenthesized limit with order outside: order by, offset, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE b = $1)) AS t
+[]interface {}{1}
+
+## parenthesized limit with order outside: where, order by, offset
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: where, order by, offset, count
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: then by, offset
+(SELECT a FROM t WHERE b = $1 LIMIT $2 OFFSET $3) ORDER BY a, y NULLS LAST
+[]interface {}{1, 2, 20}
+
+## parenthesized limit with order outside: then by, offset, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE b = $1)) AS t
+[]interface {}{1}
+
+## parenthesized limit with order outside: where, then by, offset
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: where, then by, offset, count
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: limit, offset
+error: glimt: query "parenthesized_limit_with_order_outside": can't replace a LIMIT that holds a param
+
+## parenthesized limit with order outside: limit, offset, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE b = $1)) AS t
+[]interface {}{1}
+
+## parenthesized limit with order outside: where, limit, offset
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: where, limit, offset, count
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: order by, limit, offset
+error: glimt: query "parenthesized_limit_with_order_outside": can't replace a LIMIT that holds a param
+
+## parenthesized limit with order outside: order by, limit, offset, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE b = $1)) AS t
+[]interface {}{1}
+
+## parenthesized limit with order outside: where, order by, limit, offset
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: where, order by, limit, offset, count
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: then by, limit, offset
+error: glimt: query "parenthesized_limit_with_order_outside": can't replace a LIMIT that holds a param
+
+## parenthesized limit with order outside: then by, limit, offset, count
+SELECT count(*) FROM ((SELECT a FROM t WHERE b = $1)) AS t
+[]interface {}{1}
+
+## parenthesized limit with order outside: where, then by, limit, offset
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## parenthesized limit with order outside: where, then by, limit, offset, count
+error: glimt: query "parenthesized_limit_with_order_outside": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## with: as written
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)
+[]interface {}(nil)
+
+## with: bound
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)
+[]interface {}(nil)
+
+## with: count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)) AS t
+[]interface {}{}
+
+## with: where
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3))
+[]interface {}{"w", 8, 9}
+
+## with: where, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3))) AS t
+[]interface {}{"w", 8, 9}
+
+## with: order by
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w) ORDER BY z DESC
+[]interface {}{}
+
+## with: order by, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)) AS t
+[]interface {}{}
+
+## with: where, order by
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3)) ORDER BY z DESC
+[]interface {}{"w", 8, 9}
+
+## with: where, order by, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3))) AS t
+[]interface {}{"w", 8, 9}
+
+## with: then by
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w) ORDER BY y NULLS LAST
+[]interface {}{}
+
+## with: then by, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)) AS t
+[]interface {}{}
+
+## with: where, then by
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3)) ORDER BY y NULLS LAST
+[]interface {}{"w", 8, 9}
+
+## with: where, then by, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3))) AS t
+[]interface {}{"w", 8, 9}
+
+## with: limit
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w) LIMIT $1
+[]interface {}{10}
+
+## with: limit, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)) AS t
+[]interface {}{}
+
+## with: where, limit
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3)) LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## with: where, limit, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3))) AS t
+[]interface {}{"w", 8, 9}
+
+## with: order by, limit
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w) ORDER BY z DESC LIMIT $1
+[]interface {}{10}
+
+## with: order by, limit, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)) AS t
+[]interface {}{}
+
+## with: where, order by, limit
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3)) ORDER BY z DESC LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## with: where, order by, limit, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3))) AS t
+[]interface {}{"w", 8, 9}
+
+## with: then by, limit
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w) ORDER BY y NULLS LAST LIMIT $1
+[]interface {}{10}
+
+## with: then by, limit, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)) AS t
+[]interface {}{}
+
+## with: where, then by, limit
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3)) ORDER BY y NULLS LAST LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## with: where, then by, limit, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3))) AS t
+[]interface {}{"w", 8, 9}
+
+## with: offset
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w) OFFSET $1
+[]interface {}{20}
+
+## with: offset, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)) AS t
+[]interface {}{}
+
+## with: where, offset
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3)) OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## with: where, offset, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3))) AS t
+[]interface {}{"w", 8, 9}
+
+## with: order by, offset
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w) ORDER BY z DESC OFFSET $1
+[]interface {}{20}
+
+## with: order by, offset, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)) AS t
+[]interface {}{}
+
+## with: where, order by, offset
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3)) ORDER BY z DESC OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## with: where, order by, offset, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3))) AS t
+[]interface {}{"w", 8, 9}
+
+## with: then by, offset
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w) ORDER BY y NULLS LAST OFFSET $1
+[]interface {}{20}
+
+## with: then by, offset, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)) AS t
+[]interface {}{}
+
+## with: where, then by, offset
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3)) ORDER BY y NULLS LAST OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## with: where, then by, offset, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3))) AS t
+[]interface {}{"w", 8, 9}
+
+## with: limit, offset
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w) LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## with: limit, offset, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)) AS t
+[]interface {}{}
+
+## with: where, limit, offset
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3)) LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## with: where, limit, offset, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3))) AS t
+[]interface {}{"w", 8, 9}
+
+## with: order by, limit, offset
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w) ORDER BY z DESC LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## with: order by, limit, offset, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)) AS t
+[]interface {}{}
+
+## with: where, order by, limit, offset
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3)) ORDER BY z DESC LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## with: where, order by, limit, offset, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3))) AS t
+[]interface {}{"w", 8, 9}
+
+## with: then by, limit, offset
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w) ORDER BY y NULLS LAST LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## with: then by, limit, offset, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE z IN (SELECT 1 WHERE w)) AS t
+[]interface {}{}
+
+## with: where, then by, limit, offset
+WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3)) ORDER BY y NULLS LAST LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## with: where, then by, limit, offset, count
+SELECT count(*) FROM (WITH c AS (SELECT a FROM x WHERE y LIMIT 1) SELECT * FROM c WHERE (z IN (SELECT 1 WHERE w)) AND (z = $1 AND y IN ($2, $3))) AS t
+[]interface {}{"w", 8, 9}
+
+## update with where: as written
+UPDATE t SET a = $1 WHERE id = $2 RETURNING id
+[]interface {}{1, 2}
+
+## update with where: bound
+UPDATE t SET a = $1 WHERE id = $2 RETURNING id
+[]interface {}{1, 2}
+
+## update with where: count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: where
+UPDATE t SET a = $1 WHERE (id = $2) AND (z = $3 AND y IN ($4, $5)) RETURNING id
+[]interface {}{1, 2, "w", 8, 9}
+
+## update with where: where, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: order by
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: order by, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: where, order by
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: where, order by, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: then by
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: then by, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: where, then by
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: where, then by, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: limit
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: limit, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: where, limit
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: where, limit, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: order by, limit
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: order by, limit, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: where, order by, limit
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: where, order by, limit, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: then by, limit
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: then by, limit, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: where, then by, limit
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: where, then by, limit, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: offset
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: offset, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: where, offset
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: where, offset, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: order by, offset
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: order by, offset, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: where, order by, offset
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: where, order by, offset, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: then by, offset
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: then by, offset, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: where, then by, offset
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: where, then by, offset, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: limit, offset
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: limit, offset, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: where, limit, offset
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: where, limit, offset, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: order by, limit, offset
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: order by, limit, offset, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: where, order by, limit, offset
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: where, order by, limit, offset, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: then by, limit, offset
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: then by, limit, offset, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update with where: where, then by, limit, offset
+error: glimt: query "update_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update with where: where, then by, limit, offset, count
+error: glimt: query "update_with_where": only a query can be counted
+
+## update without where: as written
+UPDATE t SET a = 1 FROM s RETURNING a
+[]interface {}(nil)
+
+## update without where: bound
+UPDATE t SET a = 1 FROM s RETURNING a
+[]interface {}(nil)
+
+## update without where: count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: where
+UPDATE t SET a = 1 FROM s WHERE z = $1 AND y IN ($2, $3) RETURNING a
+[]interface {}{"w", 8, 9}
+
+## update without where: where, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: order by
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: order by, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: where, order by
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: where, order by, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: then by
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: then by, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: where, then by
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: where, then by, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: limit
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: limit, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: where, limit
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: where, limit, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: order by, limit
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: order by, limit, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: where, order by, limit
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: where, order by, limit, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: then by, limit
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: then by, limit, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: where, then by, limit
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: where, then by, limit, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: offset
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: offset, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: where, offset
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: where, offset, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: order by, offset
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: order by, offset, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: where, order by, offset
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: where, order by, offset, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: then by, offset
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: then by, offset, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: where, then by, offset
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: where, then by, offset, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: limit, offset
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: limit, offset, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: where, limit, offset
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: where, limit, offset, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: order by, limit, offset
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: order by, limit, offset, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: where, order by, limit, offset
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: where, order by, limit, offset, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: then by, limit, offset
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: then by, limit, offset, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## update without where: where, then by, limit, offset
+error: glimt: query "update_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## update without where: where, then by, limit, offset, count
+error: glimt: query "update_without_where": only a query can be counted
+
+## delete with where: as written
+DELETE FROM t USING s WHERE x = $1
+[]interface {}{1}
+
+## delete with where: bound
+DELETE FROM t USING s WHERE x = $1
+[]interface {}{1}
+
+## delete with where: count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: where
+DELETE FROM t USING s WHERE (x = $1) AND (z = $2 AND y IN ($3, $4))
+[]interface {}{1, "w", 8, 9}
+
+## delete with where: where, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: order by
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: order by, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: where, order by
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: where, order by, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: then by
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: then by, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: where, then by
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: where, then by, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: limit
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: limit, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: where, limit
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: where, limit, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: order by, limit
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: order by, limit, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: where, order by, limit
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: where, order by, limit, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: then by, limit
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: then by, limit, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: where, then by, limit
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: where, then by, limit, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: offset
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: offset, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: where, offset
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: where, offset, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: order by, offset
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: order by, offset, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: where, order by, offset
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: where, order by, offset, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: then by, offset
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: then by, offset, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: where, then by, offset
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: where, then by, offset, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: limit, offset
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: limit, offset, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: where, limit, offset
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: where, limit, offset, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: order by, limit, offset
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: order by, limit, offset, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: where, order by, limit, offset
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: where, order by, limit, offset, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: then by, limit, offset
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: then by, limit, offset, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete with where: where, then by, limit, offset
+error: glimt: query "delete_with_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete with where: where, then by, limit, offset, count
+error: glimt: query "delete_with_where": only a query can be counted
+
+## delete without where: as written
+DELETE FROM t RETURNING id
+[]interface {}(nil)
+
+## delete without where: bound
+DELETE FROM t RETURNING id
+[]interface {}(nil)
+
+## delete without where: count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: where
+DELETE FROM t WHERE z = $1 AND y IN ($2, $3) RETURNING id
+[]interface {}{"w", 8, 9}
+
+## delete without where: where, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: order by
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: order by, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: where, order by
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: where, order by, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: then by
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: then by, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: where, then by
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: where, then by, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: limit
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: limit, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: where, limit
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: where, limit, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: order by, limit
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: order by, limit, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: where, order by, limit
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: where, order by, limit, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: then by, limit
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: then by, limit, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: where, then by, limit
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: where, then by, limit, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: offset
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: offset, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: where, offset
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: where, offset, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: order by, offset
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: order by, offset, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: where, order by, offset
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: where, order by, offset, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: then by, offset
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: then by, offset, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: where, then by, offset
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: where, then by, offset, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: limit, offset
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: limit, offset, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: where, limit, offset
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: where, limit, offset, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: order by, limit, offset
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: order by, limit, offset, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: where, order by, limit, offset
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: where, order by, limit, offset, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: then by, limit, offset
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: then by, limit, offset, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## delete without where: where, then by, limit, offset
+error: glimt: query "delete_without_where": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## delete without where: where, then by, limit, offset, count
+error: glimt: query "delete_without_where": only a query can be counted
+
+## current of: as written
+UPDATE t SET a = 1 WHERE CURRENT OF c
+[]interface {}(nil)
+
+## current of: bound
+UPDATE t SET a = 1 WHERE CURRENT OF c
+[]interface {}(nil)
+
+## current of: count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: where
+error: glimt: query "current_of": a WHERE condition can't be added to WHERE CURRENT OF
+
+## current of: where, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: order by
+error: glimt: query "current_of": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## current of: order by, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: where, order by
+error: glimt: query "current_of": a WHERE condition can't be added to WHERE CURRENT OF
+
+## current of: where, order by, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: then by
+error: glimt: query "current_of": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## current of: then by, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: where, then by
+error: glimt: query "current_of": a WHERE condition can't be added to WHERE CURRENT OF
+
+## current of: where, then by, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: limit
+error: glimt: query "current_of": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## current of: limit, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: where, limit
+error: glimt: query "current_of": a WHERE condition can't be added to WHERE CURRENT OF
+
+## current of: where, limit, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: order by, limit
+error: glimt: query "current_of": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## current of: order by, limit, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: where, order by, limit
+error: glimt: query "current_of": a WHERE condition can't be added to WHERE CURRENT OF
+
+## current of: where, order by, limit, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: then by, limit
+error: glimt: query "current_of": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## current of: then by, limit, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: where, then by, limit
+error: glimt: query "current_of": a WHERE condition can't be added to WHERE CURRENT OF
+
+## current of: where, then by, limit, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: offset
+error: glimt: query "current_of": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## current of: offset, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: where, offset
+error: glimt: query "current_of": a WHERE condition can't be added to WHERE CURRENT OF
+
+## current of: where, offset, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: order by, offset
+error: glimt: query "current_of": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## current of: order by, offset, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: where, order by, offset
+error: glimt: query "current_of": a WHERE condition can't be added to WHERE CURRENT OF
+
+## current of: where, order by, offset, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: then by, offset
+error: glimt: query "current_of": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## current of: then by, offset, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: where, then by, offset
+error: glimt: query "current_of": a WHERE condition can't be added to WHERE CURRENT OF
+
+## current of: where, then by, offset, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: limit, offset
+error: glimt: query "current_of": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## current of: limit, offset, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: where, limit, offset
+error: glimt: query "current_of": a WHERE condition can't be added to WHERE CURRENT OF
+
+## current of: where, limit, offset, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: order by, limit, offset
+error: glimt: query "current_of": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## current of: order by, limit, offset, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: where, order by, limit, offset
+error: glimt: query "current_of": a WHERE condition can't be added to WHERE CURRENT OF
+
+## current of: where, order by, limit, offset, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: then by, limit, offset
+error: glimt: query "current_of": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## current of: then by, limit, offset, count
+error: glimt: query "current_of": only a query can be counted
+
+## current of: where, then by, limit, offset
+error: glimt: query "current_of": a WHERE condition can't be added to WHERE CURRENT OF
+
+## current of: where, then by, limit, offset, count
+error: glimt: query "current_of": only a query can be counted
+
+## insert: as written
+INSERT INTO t (a) VALUES ($1) RETURNING a
+[]interface {}{1}
+
+## insert: bound
+INSERT INTO t (a) VALUES ($1) RETURNING a
+[]interface {}{1}
+
+## insert: count
+error: glimt: query "insert": only a query can be counted
+
+## insert: where
+error: glimt: query "insert": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## insert: where, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: order by
+error: glimt: query "insert": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## insert: order by, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: where, order by
+error: glimt: query "insert": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## insert: where, order by, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: then by
+error: glimt: query "insert": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## insert: then by, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: where, then by
+error: glimt: query "insert": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## insert: where, then by, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: limit
+error: glimt: query "insert": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## insert: limit, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: where, limit
+error: glimt: query "insert": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## insert: where, limit, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: order by, limit
+error: glimt: query "insert": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## insert: order by, limit, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: where, order by, limit
+error: glimt: query "insert": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## insert: where, order by, limit, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: then by, limit
+error: glimt: query "insert": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## insert: then by, limit, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: where, then by, limit
+error: glimt: query "insert": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## insert: where, then by, limit, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: offset
+error: glimt: query "insert": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## insert: offset, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: where, offset
+error: glimt: query "insert": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## insert: where, offset, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: order by, offset
+error: glimt: query "insert": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## insert: order by, offset, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: where, order by, offset
+error: glimt: query "insert": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## insert: where, order by, offset, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: then by, offset
+error: glimt: query "insert": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## insert: then by, offset, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: where, then by, offset
+error: glimt: query "insert": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## insert: where, then by, offset, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: limit, offset
+error: glimt: query "insert": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## insert: limit, offset, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: where, limit, offset
+error: glimt: query "insert": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## insert: where, limit, offset, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: order by, limit, offset
+error: glimt: query "insert": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## insert: order by, limit, offset, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: where, order by, limit, offset
+error: glimt: query "insert": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## insert: where, order by, limit, offset, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: then by, limit, offset
+error: glimt: query "insert": ORDER BY, LIMIT and OFFSET can only be added to a query
+
+## insert: then by, limit, offset, count
+error: glimt: query "insert": only a query can be counted
+
+## insert: where, then by, limit, offset
+error: glimt: query "insert": a WHERE condition can only be added to a SELECT, UPDATE or DELETE
+
+## insert: where, then by, limit, offset, count
+error: glimt: query "insert": only a query can be counted
+
+## fetch: as written
+SELECT a FROM t ORDER BY a FETCH FIRST 5 ROWS ONLY
+[]interface {}(nil)
+
+## fetch: bound
+SELECT a FROM t ORDER BY a FETCH FIRST 5 ROWS ONLY
+[]interface {}(nil)
+
+## fetch: count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## fetch: where
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY a FETCH FIRST 5 ROWS ONLY
+[]interface {}{"w", 8, 9}
+
+## fetch: where, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## fetch: order by
+SELECT a FROM t ORDER BY z DESC FETCH FIRST 5 ROWS ONLY
+[]interface {}{}
+
+## fetch: order by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## fetch: where, order by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC FETCH FIRST 5 ROWS ONLY
+[]interface {}{"w", 8, 9}
+
+## fetch: where, order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## fetch: then by
+SELECT a FROM t ORDER BY a, y NULLS LAST FETCH FIRST 5 ROWS ONLY
+[]interface {}{}
+
+## fetch: then by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## fetch: where, then by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY a, y NULLS LAST FETCH FIRST 5 ROWS ONLY
+[]interface {}{"w", 8, 9}
+
+## fetch: where, then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## fetch: limit
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: limit, count
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: where, limit
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: where, limit, count
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: order by, limit
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: order by, limit, count
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: where, order by, limit
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: where, order by, limit, count
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: then by, limit
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: then by, limit, count
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: where, then by, limit
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: where, then by, limit, count
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: offset
+SELECT a FROM t ORDER BY a FETCH FIRST 5 ROWS ONLY OFFSET $1
+[]interface {}{20}
+
+## fetch: offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## fetch: where, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY a FETCH FIRST 5 ROWS ONLY OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## fetch: where, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## fetch: order by, offset
+SELECT a FROM t ORDER BY z DESC FETCH FIRST 5 ROWS ONLY OFFSET $1
+[]interface {}{20}
+
+## fetch: order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## fetch: where, order by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC FETCH FIRST 5 ROWS ONLY OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## fetch: where, order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## fetch: then by, offset
+SELECT a FROM t ORDER BY a, y NULLS LAST FETCH FIRST 5 ROWS ONLY OFFSET $1
+[]interface {}{20}
+
+## fetch: then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## fetch: where, then by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY a, y NULLS LAST FETCH FIRST 5 ROWS ONLY OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## fetch: where, then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## fetch: limit, offset
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: limit, offset, count
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: where, limit, offset
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: where, limit, offset, count
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: order by, limit, offset
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: order by, limit, offset, count
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: where, order by, limit, offset
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: where, order by, limit, offset, count
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: then by, limit, offset
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: then by, limit, offset, count
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: where, then by, limit, offset
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## fetch: where, then by, limit, offset, count
+error: glimt: query "fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: as written
+SELECT a FROM t OFFSET 2 FETCH NEXT 5 ROWS WITH TIES
+[]interface {}(nil)
+
+## offset and fetch: bound
+SELECT a FROM t OFFSET 2 FETCH NEXT 5 ROWS WITH TIES
+[]interface {}(nil)
+
+## offset and fetch: count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset and fetch: where
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) OFFSET 2 FETCH NEXT 5 ROWS WITH TIES
+[]interface {}{"w", 8, 9}
+
+## offset and fetch: where, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset and fetch: order by
+SELECT a FROM t ORDER BY z DESC OFFSET 2 FETCH NEXT 5 ROWS WITH TIES
+[]interface {}{}
+
+## offset and fetch: order by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset and fetch: where, order by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC OFFSET 2 FETCH NEXT 5 ROWS WITH TIES
+[]interface {}{"w", 8, 9}
+
+## offset and fetch: where, order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset and fetch: then by
+SELECT a FROM t ORDER BY y NULLS LAST OFFSET 2 FETCH NEXT 5 ROWS WITH TIES
+[]interface {}{}
+
+## offset and fetch: then by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset and fetch: where, then by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST OFFSET 2 FETCH NEXT 5 ROWS WITH TIES
+[]interface {}{"w", 8, 9}
+
+## offset and fetch: where, then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset and fetch: limit
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: limit, count
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: where, limit
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: where, limit, count
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: order by, limit
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: order by, limit, count
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: where, order by, limit
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: where, order by, limit, count
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: then by, limit
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: then by, limit, count
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: where, then by, limit
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: where, then by, limit, count
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: offset
+SELECT a FROM t OFFSET $1 FETCH NEXT 5 ROWS WITH TIES
+[]interface {}{20}
+
+## offset and fetch: offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset and fetch: where, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) OFFSET $4 FETCH NEXT 5 ROWS WITH TIES
+[]interface {}{"w", 8, 9, 20}
+
+## offset and fetch: where, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset and fetch: order by, offset
+SELECT a FROM t ORDER BY z DESC OFFSET $1 FETCH NEXT 5 ROWS WITH TIES
+[]interface {}{20}
+
+## offset and fetch: order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset and fetch: where, order by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC OFFSET $4 FETCH NEXT 5 ROWS WITH TIES
+[]interface {}{"w", 8, 9, 20}
+
+## offset and fetch: where, order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset and fetch: then by, offset
+SELECT a FROM t ORDER BY y NULLS LAST OFFSET $1 FETCH NEXT 5 ROWS WITH TIES
+[]interface {}{20}
+
+## offset and fetch: then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset and fetch: where, then by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST OFFSET $4 FETCH NEXT 5 ROWS WITH TIES
+[]interface {}{"w", 8, 9, 20}
+
+## offset and fetch: where, then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset and fetch: limit, offset
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: limit, offset, count
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: where, limit, offset
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: where, limit, offset, count
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: order by, limit, offset
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: order by, limit, offset, count
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: where, order by, limit, offset
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: where, order by, limit, offset, count
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: then by, limit, offset
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: then by, limit, offset, count
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: where, then by, limit, offset
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## offset and fetch: where, then by, limit, offset, count
+error: glimt: query "offset_and_fetch": LIMIT can't be added to a query that uses FETCH
+
+## for before limit: as written
+SELECT a FROM t FOR UPDATE LIMIT 1
+[]interface {}(nil)
+
+## for before limit: bound
+SELECT a FROM t FOR UPDATE LIMIT 1
+[]interface {}(nil)
+
+## for before limit: count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for before limit: where
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) FOR UPDATE LIMIT 1
+[]interface {}{"w", 8, 9}
+
+## for before limit: where, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for before limit: order by
+SELECT a FROM t ORDER BY z DESC FOR UPDATE LIMIT 1
+[]interface {}{}
+
+## for before limit: order by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for before limit: where, order by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC FOR UPDATE LIMIT 1
+[]interface {}{"w", 8, 9}
+
+## for before limit: where, order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for before limit: then by
+SELECT a FROM t ORDER BY y NULLS LAST FOR UPDATE LIMIT 1
+[]interface {}{}
+
+## for before limit: then by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for before limit: where, then by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST FOR UPDATE LIMIT 1
+[]interface {}{"w", 8, 9}
+
+## for before limit: where, then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for before limit: limit
+SELECT a FROM t FOR UPDATE LIMIT $1
+[]interface {}{10}
+
+## for before limit: limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for before limit: where, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) FOR UPDATE LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## for before limit: where, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for before limit: order by, limit
+SELECT a FROM t ORDER BY z DESC FOR UPDATE LIMIT $1
+[]interface {}{10}
+
+## for before limit: order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for before limit: where, order by, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC FOR UPDATE LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## for before limit: where, order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for before limit: then by, limit
+SELECT a FROM t ORDER BY y NULLS LAST FOR UPDATE LIMIT $1
+[]interface {}{10}
+
+## for before limit: then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for before limit: where, then by, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST FOR UPDATE LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## for before limit: where, then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for before limit: offset
+SELECT a FROM t FOR UPDATE LIMIT 1 OFFSET $1
+[]interface {}{20}
+
+## for before limit: offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for before limit: where, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) FOR UPDATE LIMIT 1 OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## for before limit: where, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for before limit: order by, offset
+SELECT a FROM t ORDER BY z DESC FOR UPDATE LIMIT 1 OFFSET $1
+[]interface {}{20}
+
+## for before limit: order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for before limit: where, order by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC FOR UPDATE LIMIT 1 OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## for before limit: where, order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for before limit: then by, offset
+SELECT a FROM t ORDER BY y NULLS LAST FOR UPDATE LIMIT 1 OFFSET $1
+[]interface {}{20}
+
+## for before limit: then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for before limit: where, then by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST FOR UPDATE LIMIT 1 OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## for before limit: where, then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for before limit: limit, offset
+SELECT a FROM t FOR UPDATE LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## for before limit: limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for before limit: where, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) FOR UPDATE LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## for before limit: where, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for before limit: order by, limit, offset
+SELECT a FROM t ORDER BY z DESC FOR UPDATE LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## for before limit: order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for before limit: where, order by, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC FOR UPDATE LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## for before limit: where, order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for before limit: then by, limit, offset
+SELECT a FROM t ORDER BY y NULLS LAST FOR UPDATE LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## for before limit: then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for before limit: where, then by, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST FOR UPDATE LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## for before limit: where, then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for after limit: as written
+SELECT a FROM t LIMIT 1 FOR SHARE SKIP LOCKED
+[]interface {}(nil)
+
+## for after limit: bound
+SELECT a FROM t LIMIT 1 FOR SHARE SKIP LOCKED
+[]interface {}(nil)
+
+## for after limit: count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for after limit: where
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) LIMIT 1 FOR SHARE SKIP LOCKED
+[]interface {}{"w", 8, 9}
+
+## for after limit: where, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for after limit: order by
+SELECT a FROM t ORDER BY z DESC LIMIT 1 FOR SHARE SKIP LOCKED
+[]interface {}{}
+
+## for after limit: order by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for after limit: where, order by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC LIMIT 1 FOR SHARE SKIP LOCKED
+[]interface {}{"w", 8, 9}
+
+## for after limit: where, order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for after limit: then by
+SELECT a FROM t ORDER BY y NULLS LAST LIMIT 1 FOR SHARE SKIP LOCKED
+[]interface {}{}
+
+## for after limit: then by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for after limit: where, then by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST LIMIT 1 FOR SHARE SKIP LOCKED
+[]interface {}{"w", 8, 9}
+
+## for after limit: where, then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for after limit: limit
+SELECT a FROM t LIMIT $1 FOR SHARE SKIP LOCKED
+[]interface {}{10}
+
+## for after limit: limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for after limit: where, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) LIMIT $4 FOR SHARE SKIP LOCKED
+[]interface {}{"w", 8, 9, 10}
+
+## for after limit: where, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for after limit: order by, limit
+SELECT a FROM t ORDER BY z DESC LIMIT $1 FOR SHARE SKIP LOCKED
+[]interface {}{10}
+
+## for after limit: order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for after limit: where, order by, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC LIMIT $4 FOR SHARE SKIP LOCKED
+[]interface {}{"w", 8, 9, 10}
+
+## for after limit: where, order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for after limit: then by, limit
+SELECT a FROM t ORDER BY y NULLS LAST LIMIT $1 FOR SHARE SKIP LOCKED
+[]interface {}{10}
+
+## for after limit: then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for after limit: where, then by, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST LIMIT $4 FOR SHARE SKIP LOCKED
+[]interface {}{"w", 8, 9, 10}
+
+## for after limit: where, then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for after limit: offset
+SELECT a FROM t LIMIT 1 OFFSET $1 FOR SHARE SKIP LOCKED
+[]interface {}{20}
+
+## for after limit: offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for after limit: where, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) LIMIT 1 OFFSET $4 FOR SHARE SKIP LOCKED
+[]interface {}{"w", 8, 9, 20}
+
+## for after limit: where, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for after limit: order by, offset
+SELECT a FROM t ORDER BY z DESC LIMIT 1 OFFSET $1 FOR SHARE SKIP LOCKED
+[]interface {}{20}
+
+## for after limit: order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for after limit: where, order by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC LIMIT 1 OFFSET $4 FOR SHARE SKIP LOCKED
+[]interface {}{"w", 8, 9, 20}
+
+## for after limit: where, order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for after limit: then by, offset
+SELECT a FROM t ORDER BY y NULLS LAST LIMIT 1 OFFSET $1 FOR SHARE SKIP LOCKED
+[]interface {}{20}
+
+## for after limit: then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for after limit: where, then by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST LIMIT 1 OFFSET $4 FOR SHARE SKIP LOCKED
+[]interface {}{"w", 8, 9, 20}
+
+## for after limit: where, then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for after limit: limit, offset
+SELECT a FROM t LIMIT $1 OFFSET $2 FOR SHARE SKIP LOCKED
+[]interface {}{10, 20}
+
+## for after limit: limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for after limit: where, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) LIMIT $4 OFFSET $5 FOR SHARE SKIP LOCKED
+[]interface {}{"w", 8, 9, 10, 20}
+
+## for after limit: where, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for after limit: order by, limit, offset
+SELECT a FROM t ORDER BY z DESC LIMIT $1 OFFSET $2 FOR SHARE SKIP LOCKED
+[]interface {}{10, 20}
+
+## for after limit: order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for after limit: where, order by, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC LIMIT $4 OFFSET $5 FOR SHARE SKIP LOCKED
+[]interface {}{"w", 8, 9, 10, 20}
+
+## for after limit: where, order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## for after limit: then by, limit, offset
+SELECT a FROM t ORDER BY y NULLS LAST LIMIT $1 OFFSET $2 FOR SHARE SKIP LOCKED
+[]interface {}{10, 20}
+
+## for after limit: then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## for after limit: where, then by, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST LIMIT $4 OFFSET $5 FOR SHARE SKIP LOCKED
+[]interface {}{"w", 8, 9, 10, 20}
+
+## for after limit: where, then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset before limit: as written
+SELECT a FROM t OFFSET 5 LIMIT 1
+[]interface {}(nil)
+
+## offset before limit: bound
+SELECT a FROM t OFFSET 5 LIMIT 1
+[]interface {}(nil)
+
+## offset before limit: count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset before limit: where
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) OFFSET 5 LIMIT 1
+[]interface {}{"w", 8, 9}
+
+## offset before limit: where, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset before limit: order by
+SELECT a FROM t ORDER BY z DESC OFFSET 5 LIMIT 1
+[]interface {}{}
+
+## offset before limit: order by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset before limit: where, order by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC OFFSET 5 LIMIT 1
+[]interface {}{"w", 8, 9}
+
+## offset before limit: where, order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset before limit: then by
+SELECT a FROM t ORDER BY y NULLS LAST OFFSET 5 LIMIT 1
+[]interface {}{}
+
+## offset before limit: then by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset before limit: where, then by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST OFFSET 5 LIMIT 1
+[]interface {}{"w", 8, 9}
+
+## offset before limit: where, then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset before limit: limit
+SELECT a FROM t OFFSET 5 LIMIT $1
+[]interface {}{10}
+
+## offset before limit: limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset before limit: where, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) OFFSET 5 LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## offset before limit: where, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset before limit: order by, limit
+SELECT a FROM t ORDER BY z DESC OFFSET 5 LIMIT $1
+[]interface {}{10}
+
+## offset before limit: order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset before limit: where, order by, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC OFFSET 5 LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## offset before limit: where, order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset before limit: then by, limit
+SELECT a FROM t ORDER BY y NULLS LAST OFFSET 5 LIMIT $1
+[]interface {}{10}
+
+## offset before limit: then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset before limit: where, then by, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST OFFSET 5 LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## offset before limit: where, then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset before limit: offset
+SELECT a FROM t OFFSET $1 LIMIT 1
+[]interface {}{20}
+
+## offset before limit: offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset before limit: where, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) OFFSET $4 LIMIT 1
+[]interface {}{"w", 8, 9, 20}
+
+## offset before limit: where, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset before limit: order by, offset
+SELECT a FROM t ORDER BY z DESC OFFSET $1 LIMIT 1
+[]interface {}{20}
+
+## offset before limit: order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset before limit: where, order by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC OFFSET $4 LIMIT 1
+[]interface {}{"w", 8, 9, 20}
+
+## offset before limit: where, order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset before limit: then by, offset
+SELECT a FROM t ORDER BY y NULLS LAST OFFSET $1 LIMIT 1
+[]interface {}{20}
+
+## offset before limit: then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset before limit: where, then by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST OFFSET $4 LIMIT 1
+[]interface {}{"w", 8, 9, 20}
+
+## offset before limit: where, then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset before limit: limit, offset
+SELECT a FROM t OFFSET $1 LIMIT $2
+[]interface {}{20, 10}
+
+## offset before limit: limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset before limit: where, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) OFFSET $4 LIMIT $5
+[]interface {}{"w", 8, 9, 20, 10}
+
+## offset before limit: where, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset before limit: order by, limit, offset
+SELECT a FROM t ORDER BY z DESC OFFSET $1 LIMIT $2
+[]interface {}{20, 10}
+
+## offset before limit: order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset before limit: where, order by, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC OFFSET $4 LIMIT $5
+[]interface {}{"w", 8, 9, 20, 10}
+
+## offset before limit: where, order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset before limit: then by, limit, offset
+SELECT a FROM t ORDER BY y NULLS LAST OFFSET $1 LIMIT $2
+[]interface {}{20, 10}
+
+## offset before limit: then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset before limit: where, then by, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST OFFSET $4 LIMIT $5
+[]interface {}{"w", 8, 9, 20, 10}
+
+## offset before limit: where, then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## limit only: as written
+SELECT a FROM t LIMIT 1
+[]interface {}(nil)
+
+## limit only: bound
+SELECT a FROM t LIMIT 1
+[]interface {}(nil)
+
+## limit only: count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## limit only: where
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) LIMIT 1
+[]interface {}{"w", 8, 9}
+
+## limit only: where, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## limit only: order by
+SELECT a FROM t ORDER BY z DESC LIMIT 1
+[]interface {}{}
+
+## limit only: order by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## limit only: where, order by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC LIMIT 1
+[]interface {}{"w", 8, 9}
+
+## limit only: where, order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## limit only: then by
+SELECT a FROM t ORDER BY y NULLS LAST LIMIT 1
+[]interface {}{}
+
+## limit only: then by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## limit only: where, then by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST LIMIT 1
+[]interface {}{"w", 8, 9}
+
+## limit only: where, then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## limit only: limit
+SELECT a FROM t LIMIT $1
+[]interface {}{10}
+
+## limit only: limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## limit only: where, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## limit only: where, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## limit only: order by, limit
+SELECT a FROM t ORDER BY z DESC LIMIT $1
+[]interface {}{10}
+
+## limit only: order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## limit only: where, order by, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## limit only: where, order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## limit only: then by, limit
+SELECT a FROM t ORDER BY y NULLS LAST LIMIT $1
+[]interface {}{10}
+
+## limit only: then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## limit only: where, then by, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## limit only: where, then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## limit only: offset
+SELECT a FROM t LIMIT 1 OFFSET $1
+[]interface {}{20}
+
+## limit only: offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## limit only: where, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) LIMIT 1 OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## limit only: where, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## limit only: order by, offset
+SELECT a FROM t ORDER BY z DESC LIMIT 1 OFFSET $1
+[]interface {}{20}
+
+## limit only: order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## limit only: where, order by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC LIMIT 1 OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## limit only: where, order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## limit only: then by, offset
+SELECT a FROM t ORDER BY y NULLS LAST LIMIT 1 OFFSET $1
+[]interface {}{20}
+
+## limit only: then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## limit only: where, then by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST LIMIT 1 OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## limit only: where, then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## limit only: limit, offset
+SELECT a FROM t LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## limit only: limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## limit only: where, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## limit only: where, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## limit only: order by, limit, offset
+SELECT a FROM t ORDER BY z DESC LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## limit only: order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## limit only: where, order by, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## limit only: where, order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## limit only: then by, limit, offset
+SELECT a FROM t ORDER BY y NULLS LAST LIMIT $1 OFFSET $2
+[]interface {}{10, 20}
+
+## limit only: then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## limit only: where, then by, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST LIMIT $4 OFFSET $5
+[]interface {}{"w", 8, 9, 10, 20}
+
+## limit only: where, then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset only: as written
+SELECT a FROM t OFFSET 1
+[]interface {}(nil)
+
+## offset only: bound
+SELECT a FROM t OFFSET 1
+[]interface {}(nil)
+
+## offset only: count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset only: where
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) OFFSET 1
+[]interface {}{"w", 8, 9}
+
+## offset only: where, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset only: order by
+SELECT a FROM t ORDER BY z DESC OFFSET 1
+[]interface {}{}
+
+## offset only: order by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset only: where, order by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC OFFSET 1
+[]interface {}{"w", 8, 9}
+
+## offset only: where, order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset only: then by
+SELECT a FROM t ORDER BY y NULLS LAST OFFSET 1
+[]interface {}{}
+
+## offset only: then by, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset only: where, then by
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST OFFSET 1
+[]interface {}{"w", 8, 9}
+
+## offset only: where, then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset only: limit
+SELECT a FROM t OFFSET 1 LIMIT $1
+[]interface {}{10}
+
+## offset only: limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset only: where, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) OFFSET 1 LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## offset only: where, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset only: order by, limit
+SELECT a FROM t ORDER BY z DESC OFFSET 1 LIMIT $1
+[]interface {}{10}
+
+## offset only: order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset only: where, order by, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC OFFSET 1 LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## offset only: where, order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset only: then by, limit
+SELECT a FROM t ORDER BY y NULLS LAST OFFSET 1 LIMIT $1
+[]interface {}{10}
+
+## offset only: then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset only: where, then by, limit
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST OFFSET 1 LIMIT $4
+[]interface {}{"w", 8, 9, 10}
+
+## offset only: where, then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset only: offset
+SELECT a FROM t OFFSET $1
+[]interface {}{20}
+
+## offset only: offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset only: where, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## offset only: where, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset only: order by, offset
+SELECT a FROM t ORDER BY z DESC OFFSET $1
+[]interface {}{20}
+
+## offset only: order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset only: where, order by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## offset only: where, order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset only: then by, offset
+SELECT a FROM t ORDER BY y NULLS LAST OFFSET $1
+[]interface {}{20}
+
+## offset only: then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset only: where, then by, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST OFFSET $4
+[]interface {}{"w", 8, 9, 20}
+
+## offset only: where, then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset only: limit, offset
+SELECT a FROM t OFFSET $1 LIMIT $2
+[]interface {}{20, 10}
+
+## offset only: limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset only: where, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) OFFSET $4 LIMIT $5
+[]interface {}{"w", 8, 9, 20, 10}
+
+## offset only: where, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset only: order by, limit, offset
+SELECT a FROM t ORDER BY z DESC OFFSET $1 LIMIT $2
+[]interface {}{20, 10}
+
+## offset only: order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset only: where, order by, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY z DESC OFFSET $4 LIMIT $5
+[]interface {}{"w", 8, 9, 20, 10}
+
+## offset only: where, order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## offset only: then by, limit, offset
+SELECT a FROM t ORDER BY y NULLS LAST OFFSET $1 LIMIT $2
+[]interface {}{20, 10}
+
+## offset only: then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t) AS t
+[]interface {}{}
+
+## offset only: where, then by, limit, offset
+SELECT a FROM t WHERE z = $1 AND y IN ($2, $3) ORDER BY y NULLS LAST OFFSET $4 LIMIT $5
+[]interface {}{"w", 8, 9, 20, 10}
+
+## offset only: where, then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## params in the tail: as written
+SELECT a FROM t WHERE b = $1 ORDER BY f($2) LIMIT $3 OFFSET $4
+[]interface {}{1, 2, 3, 4}
+
+## params in the tail: bound
+SELECT a FROM t WHERE b = $1 ORDER BY f($2) LIMIT $3 OFFSET $4
+[]interface {}{1, 2, 3, 4}
+
+## params in the tail: count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{1}
+
+## params in the tail: where
+SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) ORDER BY f($5) LIMIT $6 OFFSET $7
+[]interface {}{1, "w", 8, 9, 2, 3, 4}
+
+## params in the tail: where, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{1, "w", 8, 9}
+
+## params in the tail: order by
+error: glimt: query "params_in_the_tail": can't replace an ORDER BY that holds a param
+
+## params in the tail: order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{1}
+
+## params in the tail: where, order by
+error: glimt: query "params_in_the_tail": can't replace an ORDER BY that holds a param
+
+## params in the tail: where, order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{1, "w", 8, 9}
+
+## params in the tail: then by
+SELECT a FROM t WHERE b = $1 ORDER BY f($2), y NULLS LAST LIMIT $3 OFFSET $4
+[]interface {}{1, 2, 3, 4}
+
+## params in the tail: then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{1}
+
+## params in the tail: where, then by
+SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) ORDER BY f($5), y NULLS LAST LIMIT $6 OFFSET $7
+[]interface {}{1, "w", 8, 9, 2, 3, 4}
+
+## params in the tail: where, then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{1, "w", 8, 9}
+
+## params in the tail: limit
+error: glimt: query "params_in_the_tail": can't replace a LIMIT that holds a param
+
+## params in the tail: limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{1}
+
+## params in the tail: where, limit
+error: glimt: query "params_in_the_tail": can't replace a LIMIT that holds a param
+
+## params in the tail: where, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{1, "w", 8, 9}
+
+## params in the tail: order by, limit
+error: glimt: query "params_in_the_tail": can't replace an ORDER BY that holds a param
+
+## params in the tail: order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{1}
+
+## params in the tail: where, order by, limit
+error: glimt: query "params_in_the_tail": can't replace an ORDER BY that holds a param
+
+## params in the tail: where, order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{1, "w", 8, 9}
+
+## params in the tail: then by, limit
+error: glimt: query "params_in_the_tail": can't replace a LIMIT that holds a param
+
+## params in the tail: then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{1}
+
+## params in the tail: where, then by, limit
+error: glimt: query "params_in_the_tail": can't replace a LIMIT that holds a param
+
+## params in the tail: where, then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{1, "w", 8, 9}
+
+## params in the tail: offset
+error: glimt: query "params_in_the_tail": can't replace an OFFSET that holds a param
+
+## params in the tail: offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{1}
+
+## params in the tail: where, offset
+error: glimt: query "params_in_the_tail": can't replace an OFFSET that holds a param
+
+## params in the tail: where, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{1, "w", 8, 9}
+
+## params in the tail: order by, offset
+error: glimt: query "params_in_the_tail": can't replace an ORDER BY that holds a param
+
+## params in the tail: order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{1}
+
+## params in the tail: where, order by, offset
+error: glimt: query "params_in_the_tail": can't replace an ORDER BY that holds a param
+
+## params in the tail: where, order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{1, "w", 8, 9}
+
+## params in the tail: then by, offset
+error: glimt: query "params_in_the_tail": can't replace an OFFSET that holds a param
+
+## params in the tail: then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{1}
+
+## params in the tail: where, then by, offset
+error: glimt: query "params_in_the_tail": can't replace an OFFSET that holds a param
+
+## params in the tail: where, then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{1, "w", 8, 9}
+
+## params in the tail: limit, offset
+error: glimt: query "params_in_the_tail": can't replace a LIMIT that holds a param
+
+## params in the tail: limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{1}
+
+## params in the tail: where, limit, offset
+error: glimt: query "params_in_the_tail": can't replace a LIMIT that holds a param
+
+## params in the tail: where, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{1, "w", 8, 9}
+
+## params in the tail: order by, limit, offset
+error: glimt: query "params_in_the_tail": can't replace an ORDER BY that holds a param
+
+## params in the tail: order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{1}
+
+## params in the tail: where, order by, limit, offset
+error: glimt: query "params_in_the_tail": can't replace an ORDER BY that holds a param
+
+## params in the tail: where, order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{1, "w", 8, 9}
+
+## params in the tail: then by, limit, offset
+error: glimt: query "params_in_the_tail": can't replace a LIMIT that holds a param
+
+## params in the tail: then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{1}
+
+## params in the tail: where, then by, limit, offset
+error: glimt: query "params_in_the_tail": can't replace a LIMIT that holds a param
+
+## params in the tail: where, then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{1, "w", 8, 9}
+
+## param used in where and tail: as written
+SELECT a FROM t WHERE b = $1 ORDER BY a LIMIT $1
+[]interface {}{7}
+
+## param used in where and tail: bound
+SELECT a FROM t WHERE b = $1 ORDER BY a LIMIT $1
+[]interface {}{7}
+
+## param used in where and tail: count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{7}
+
+## param used in where and tail: where
+SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) ORDER BY a LIMIT $1
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: where, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: order by
+SELECT a FROM t WHERE b = $1 ORDER BY z DESC LIMIT $1
+[]interface {}{7}
+
+## param used in where and tail: order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{7}
+
+## param used in where and tail: where, order by
+SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) ORDER BY z DESC LIMIT $1
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: where, order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: then by
+SELECT a FROM t WHERE b = $1 ORDER BY a, y NULLS LAST LIMIT $1
+[]interface {}{7}
+
+## param used in where and tail: then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{7}
+
+## param used in where and tail: where, then by
+SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) ORDER BY a, y NULLS LAST LIMIT $1
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: where, then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: limit
+error: glimt: query "param_used_in_where_and_tail": can't replace a LIMIT that holds a param
+
+## param used in where and tail: limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{7}
+
+## param used in where and tail: where, limit
+error: glimt: query "param_used_in_where_and_tail": can't replace a LIMIT that holds a param
+
+## param used in where and tail: where, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: order by, limit
+error: glimt: query "param_used_in_where_and_tail": can't replace a LIMIT that holds a param
+
+## param used in where and tail: order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{7}
+
+## param used in where and tail: where, order by, limit
+error: glimt: query "param_used_in_where_and_tail": can't replace a LIMIT that holds a param
+
+## param used in where and tail: where, order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: then by, limit
+error: glimt: query "param_used_in_where_and_tail": can't replace a LIMIT that holds a param
+
+## param used in where and tail: then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{7}
+
+## param used in where and tail: where, then by, limit
+error: glimt: query "param_used_in_where_and_tail": can't replace a LIMIT that holds a param
+
+## param used in where and tail: where, then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: offset
+SELECT a FROM t WHERE b = $1 ORDER BY a LIMIT $1 OFFSET $2
+[]interface {}{7, 20}
+
+## param used in where and tail: offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{7}
+
+## param used in where and tail: where, offset
+SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) ORDER BY a LIMIT $1 OFFSET $5
+[]interface {}{7, "w", 8, 9, 20}
+
+## param used in where and tail: where, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: order by, offset
+SELECT a FROM t WHERE b = $1 ORDER BY z DESC LIMIT $1 OFFSET $2
+[]interface {}{7, 20}
+
+## param used in where and tail: order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{7}
+
+## param used in where and tail: where, order by, offset
+SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) ORDER BY z DESC LIMIT $1 OFFSET $5
+[]interface {}{7, "w", 8, 9, 20}
+
+## param used in where and tail: where, order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: then by, offset
+SELECT a FROM t WHERE b = $1 ORDER BY a, y NULLS LAST LIMIT $1 OFFSET $2
+[]interface {}{7, 20}
+
+## param used in where and tail: then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{7}
+
+## param used in where and tail: where, then by, offset
+SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4)) ORDER BY a, y NULLS LAST LIMIT $1 OFFSET $5
+[]interface {}{7, "w", 8, 9, 20}
+
+## param used in where and tail: where, then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: limit, offset
+error: glimt: query "param_used_in_where_and_tail": can't replace a LIMIT that holds a param
+
+## param used in where and tail: limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{7}
+
+## param used in where and tail: where, limit, offset
+error: glimt: query "param_used_in_where_and_tail": can't replace a LIMIT that holds a param
+
+## param used in where and tail: where, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: order by, limit, offset
+error: glimt: query "param_used_in_where_and_tail": can't replace a LIMIT that holds a param
+
+## param used in where and tail: order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{7}
+
+## param used in where and tail: where, order by, limit, offset
+error: glimt: query "param_used_in_where_and_tail": can't replace a LIMIT that holds a param
+
+## param used in where and tail: where, order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{7, "w", 8, 9}
+
+## param used in where and tail: then by, limit, offset
+error: glimt: query "param_used_in_where_and_tail": can't replace a LIMIT that holds a param
+
+## param used in where and tail: then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE b = $1) AS t
+[]interface {}{7}
+
+## param used in where and tail: where, then by, limit, offset
+error: glimt: query "param_used_in_where_and_tail": can't replace a LIMIT that holds a param
+
+## param used in where and tail: where, then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (b = $1) AND (z = $2 AND y IN ($3, $4))) AS t
+[]interface {}{7, "w", 8, 9}
+
+## expanding param: as written
+SELECT a FROM t WHERE id IN ($1, $2) AND org = $3 ORDER BY a
+[]interface {}{1, 2, 3}
+
+## expanding param: bound
+SELECT a FROM t WHERE id IN ($1, $2) AND org = $3 ORDER BY a
+[]interface {}{1, 2, 3}
+
+## expanding param: count
+SELECT count(*) FROM (SELECT a FROM t WHERE id IN ($1, $2) AND org = $3) AS t
+[]interface {}{1, 2, 3}
+
+## expanding param: where
+SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6)) ORDER BY a
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: where, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6))) AS t
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: order by
+SELECT a FROM t WHERE id IN ($1, $2) AND org = $3 ORDER BY z DESC
+[]interface {}{1, 2, 3}
+
+## expanding param: order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE id IN ($1, $2) AND org = $3) AS t
+[]interface {}{1, 2, 3}
+
+## expanding param: where, order by
+SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6)) ORDER BY z DESC
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: where, order by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6))) AS t
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: then by
+SELECT a FROM t WHERE id IN ($1, $2) AND org = $3 ORDER BY a, y NULLS LAST
+[]interface {}{1, 2, 3}
+
+## expanding param: then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE id IN ($1, $2) AND org = $3) AS t
+[]interface {}{1, 2, 3}
+
+## expanding param: where, then by
+SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6)) ORDER BY a, y NULLS LAST
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: where, then by, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6))) AS t
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: limit
+SELECT a FROM t WHERE id IN ($1, $2) AND org = $3 ORDER BY a LIMIT $4
+[]interface {}{1, 2, 3, 10}
+
+## expanding param: limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE id IN ($1, $2) AND org = $3) AS t
+[]interface {}{1, 2, 3}
+
+## expanding param: where, limit
+SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6)) ORDER BY a LIMIT $7
+[]interface {}{1, 2, 3, "w", 8, 9, 10}
+
+## expanding param: where, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6))) AS t
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: order by, limit
+SELECT a FROM t WHERE id IN ($1, $2) AND org = $3 ORDER BY z DESC LIMIT $4
+[]interface {}{1, 2, 3, 10}
+
+## expanding param: order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE id IN ($1, $2) AND org = $3) AS t
+[]interface {}{1, 2, 3}
+
+## expanding param: where, order by, limit
+SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6)) ORDER BY z DESC LIMIT $7
+[]interface {}{1, 2, 3, "w", 8, 9, 10}
+
+## expanding param: where, order by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6))) AS t
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: then by, limit
+SELECT a FROM t WHERE id IN ($1, $2) AND org = $3 ORDER BY a, y NULLS LAST LIMIT $4
+[]interface {}{1, 2, 3, 10}
+
+## expanding param: then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE id IN ($1, $2) AND org = $3) AS t
+[]interface {}{1, 2, 3}
+
+## expanding param: where, then by, limit
+SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6)) ORDER BY a, y NULLS LAST LIMIT $7
+[]interface {}{1, 2, 3, "w", 8, 9, 10}
+
+## expanding param: where, then by, limit, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6))) AS t
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: offset
+SELECT a FROM t WHERE id IN ($1, $2) AND org = $3 ORDER BY a OFFSET $4
+[]interface {}{1, 2, 3, 20}
+
+## expanding param: offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE id IN ($1, $2) AND org = $3) AS t
+[]interface {}{1, 2, 3}
+
+## expanding param: where, offset
+SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6)) ORDER BY a OFFSET $7
+[]interface {}{1, 2, 3, "w", 8, 9, 20}
+
+## expanding param: where, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6))) AS t
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: order by, offset
+SELECT a FROM t WHERE id IN ($1, $2) AND org = $3 ORDER BY z DESC OFFSET $4
+[]interface {}{1, 2, 3, 20}
+
+## expanding param: order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE id IN ($1, $2) AND org = $3) AS t
+[]interface {}{1, 2, 3}
+
+## expanding param: where, order by, offset
+SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6)) ORDER BY z DESC OFFSET $7
+[]interface {}{1, 2, 3, "w", 8, 9, 20}
+
+## expanding param: where, order by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6))) AS t
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: then by, offset
+SELECT a FROM t WHERE id IN ($1, $2) AND org = $3 ORDER BY a, y NULLS LAST OFFSET $4
+[]interface {}{1, 2, 3, 20}
+
+## expanding param: then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE id IN ($1, $2) AND org = $3) AS t
+[]interface {}{1, 2, 3}
+
+## expanding param: where, then by, offset
+SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6)) ORDER BY a, y NULLS LAST OFFSET $7
+[]interface {}{1, 2, 3, "w", 8, 9, 20}
+
+## expanding param: where, then by, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6))) AS t
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: limit, offset
+SELECT a FROM t WHERE id IN ($1, $2) AND org = $3 ORDER BY a LIMIT $4 OFFSET $5
+[]interface {}{1, 2, 3, 10, 20}
+
+## expanding param: limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE id IN ($1, $2) AND org = $3) AS t
+[]interface {}{1, 2, 3}
+
+## expanding param: where, limit, offset
+SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6)) ORDER BY a LIMIT $7 OFFSET $8
+[]interface {}{1, 2, 3, "w", 8, 9, 10, 20}
+
+## expanding param: where, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6))) AS t
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: order by, limit, offset
+SELECT a FROM t WHERE id IN ($1, $2) AND org = $3 ORDER BY z DESC LIMIT $4 OFFSET $5
+[]interface {}{1, 2, 3, 10, 20}
+
+## expanding param: order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE id IN ($1, $2) AND org = $3) AS t
+[]interface {}{1, 2, 3}
+
+## expanding param: where, order by, limit, offset
+SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6)) ORDER BY z DESC LIMIT $7 OFFSET $8
+[]interface {}{1, 2, 3, "w", 8, 9, 10, 20}
+
+## expanding param: where, order by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6))) AS t
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## expanding param: then by, limit, offset
+SELECT a FROM t WHERE id IN ($1, $2) AND org = $3 ORDER BY a, y NULLS LAST LIMIT $4 OFFSET $5
+[]interface {}{1, 2, 3, 10, 20}
+
+## expanding param: then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE id IN ($1, $2) AND org = $3) AS t
+[]interface {}{1, 2, 3}
+
+## expanding param: where, then by, limit, offset
+SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6)) ORDER BY a, y NULLS LAST LIMIT $7 OFFSET $8
+[]interface {}{1, 2, 3, "w", 8, 9, 10, 20}
+
+## expanding param: where, then by, limit, offset, count
+SELECT count(*) FROM (SELECT a FROM t WHERE (id IN ($1, $2) AND org = $3) AND (z = $4 AND y IN ($5, $6))) AS t
+[]interface {}{1, 2, 3, "w", 8, 9}
+
+## empty list in the tail: as written
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: bound
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: count
+SELECT count(*) FROM (SELECT id FROM users) AS t
+[]interface {}{}
+
+## empty list in the tail: where
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: where, count
+SELECT count(*) FROM (SELECT id FROM users WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## empty list in the tail: order by
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: order by, count
+SELECT count(*) FROM (SELECT id FROM users) AS t
+[]interface {}{}
+
+## empty list in the tail: where, order by
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: where, order by, count
+SELECT count(*) FROM (SELECT id FROM users WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## empty list in the tail: then by
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: then by, count
+SELECT count(*) FROM (SELECT id FROM users) AS t
+[]interface {}{}
+
+## empty list in the tail: where, then by
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: where, then by, count
+SELECT count(*) FROM (SELECT id FROM users WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## empty list in the tail: limit
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: limit, count
+SELECT count(*) FROM (SELECT id FROM users) AS t
+[]interface {}{}
+
+## empty list in the tail: where, limit
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: where, limit, count
+SELECT count(*) FROM (SELECT id FROM users WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## empty list in the tail: order by, limit
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: order by, limit, count
+SELECT count(*) FROM (SELECT id FROM users) AS t
+[]interface {}{}
+
+## empty list in the tail: where, order by, limit
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: where, order by, limit, count
+SELECT count(*) FROM (SELECT id FROM users WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## empty list in the tail: then by, limit
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: then by, limit, count
+SELECT count(*) FROM (SELECT id FROM users) AS t
+[]interface {}{}
+
+## empty list in the tail: where, then by, limit
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: where, then by, limit, count
+SELECT count(*) FROM (SELECT id FROM users WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## empty list in the tail: offset
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: offset, count
+SELECT count(*) FROM (SELECT id FROM users) AS t
+[]interface {}{}
+
+## empty list in the tail: where, offset
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: where, offset, count
+SELECT count(*) FROM (SELECT id FROM users WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## empty list in the tail: order by, offset
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: order by, offset, count
+SELECT count(*) FROM (SELECT id FROM users) AS t
+[]interface {}{}
+
+## empty list in the tail: where, order by, offset
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: where, order by, offset, count
+SELECT count(*) FROM (SELECT id FROM users WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## empty list in the tail: then by, offset
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: then by, offset, count
+SELECT count(*) FROM (SELECT id FROM users) AS t
+[]interface {}{}
+
+## empty list in the tail: where, then by, offset
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: where, then by, offset, count
+SELECT count(*) FROM (SELECT id FROM users WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## empty list in the tail: limit, offset
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: limit, offset, count
+SELECT count(*) FROM (SELECT id FROM users) AS t
+[]interface {}{}
+
+## empty list in the tail: where, limit, offset
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: where, limit, offset, count
+SELECT count(*) FROM (SELECT id FROM users WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## empty list in the tail: order by, limit, offset
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: order by, limit, offset, count
+SELECT count(*) FROM (SELECT id FROM users) AS t
+[]interface {}{}
+
+## empty list in the tail: where, order by, limit, offset
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: where, order by, limit, offset, count
+SELECT count(*) FROM (SELECT id FROM users WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+
+## empty list in the tail: then by, limit, offset
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: then by, limit, offset, count
+SELECT count(*) FROM (SELECT id FROM users) AS t
+[]interface {}{}
+
+## empty list in the tail: where, then by, limit, offset
+error: glimt: query "empty_list_in_the_tail": :ids is an empty list
+
+## empty list in the tail: where, then by, limit, offset, count
+SELECT count(*) FROM (SELECT id FROM users WHERE z = $1 AND y IN ($2, $3)) AS t
+[]interface {}{"w", 8, 9}
+

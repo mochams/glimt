@@ -4,176 +4,205 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"maps"
-	"os"
-	"path/filepath"
-	"sort"
-	"strings"
+	"path"
+	"slices"
+
+	"github.com/mochams/glimt/internal/render"
+	"github.com/mochams/glimt/internal/syntax"
 )
 
-// ErrNotFound is returned by Get when no query has the requested name.
-var ErrNotFound = errors.New("glimt: query not found")
-
-// Registry is an in-memory registry of named SQL queries.
-// Queries are sanitized once, when they are loaded or added: comments are
-// stripped and whitespace is normalized, so retrieving a query does no string work.
-//
-// Load or add queries at startup. After that, a Registry is safe for concurrent Get calls.
+// Registry holds the queries loaded by [Load], by name. It never changes
+// after Load, so it is safe to share between goroutines.
 type Registry struct {
-	queries map[string]*template
-	dialect Dialect
+	queries map[string]*Query
 }
 
-// NewRegistry creates a new Registry with an initialized queries map.
-func NewRegistry(dialect Dialect) *Registry {
-	return &Registry{
-		queries: make(map[string]*template),
-		dialect: dialect,
-	}
-}
+// Load reads every .sql file under dir in fsys, recursively, and parses and
+// compiles each query in it. fsys is usually an [embed.FS].
+//
+// A query starts at a line "-- name: <name>" and runs to the next one. End
+// each query with ";": glimt rejects a second statement in one query, and
+// the ";" is how it tells where the first one ends. Only comments may come
+// before a file's first annotation, and a line that looks like an
+// annotation but isn't one, such as "-- Name: x", is an error.
+//
+// Load doesn't stop at the first problem. It reports one error per broken
+// query, each a [*LoadError] with its file, line and column, joined with
+// [errors.Join]. Finding no queries at all is an error too.
+func Load(fsys fs.FS, dir string) (*Registry, error) {
+	l := &loader{queries: map[string]*Query{}, defined: map[string]string{}}
 
-// Has checks if a query with the given name exists in the registry.
-func (r *Registry) Has(name string) bool {
-	_, ok := r.queries[name]
+	err := fs.WalkDir(fsys, dir, func(name string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || path.Ext(name) != ".sql" {
+			return err
+		}
 
-	return ok
-}
+		src, err := fs.ReadFile(fsys, name)
+		if err != nil {
+			return err
+		}
 
-// Queries returns a sorted list of all query names in the registry.
-func (r *Registry) Queries() []string {
-	queries := make([]string, 0, len(r.queries))
-	for name := range r.queries {
-		queries = append(queries, name)
-	}
+		l.file(name, string(src))
 
-	sort.Strings(queries)
-
-	return queries
-}
-
-// Get retrieves a Query by name from the registry.
-// It returns an error wrapping ErrNotFound if the query is not found.
-func (r *Registry) Get(name string) (*Query, error) {
-	tpl, ok := r.queries[name]
-	if !ok {
-		return nil, fmt.Errorf("%w: %q", ErrNotFound, name)
-	}
-
-	return &Query{tpl: tpl, dialect: r.dialect}, nil
-}
-
-// MustGet retrieves a Query by name from the registry.
-// Panics if the query is not found.
-func (r *Registry) MustGet(name string) *Query {
-	q, err := r.Get(name)
+		return nil
+	})
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("glimt: %w", err)
+	}
+
+	if len(l.errs) > 0 {
+		return nil, errors.Join(l.errs...)
+	}
+
+	if len(l.queries) == 0 {
+		return nil, fmt.Errorf("glimt: no queries in %q", dir)
+	}
+
+	return &Registry{queries: l.queries}, nil
+}
+
+// Get returns the named query. It panics when there is none, since asking
+// for a query that isn't in the .sql files is a bug in the code. Call Get
+// for every query right after Load, so a missing one fails at startup
+// rather than in a request:
+//
+//	type queries struct{ listOrders, cancelOrder *glimt.Query }
+//
+//	q := queries{listOrders: reg.Get("listOrders"), cancelOrder: reg.Get("cancelOrder")}
+func (r *Registry) Get(name string) *Query {
+	q, ok := r.queries[name]
+	if !ok {
+		panic(fmt.Sprintf("glimt: no query named %q", name))
 	}
 
 	return q
 }
 
-// Query creates a new Query from the given SQL string.
-// Used to create ad-hoc queries that are not stored in the registry.
-// The SQL is sanitized on every call; for SQL used on every request,
-// register it once at startup with Add.
-func (r *Registry) Query(sql string) *Query {
-	return NewQuery(sql, r.dialect)
+// Lookup returns the named query and whether it exists. Use it when the
+// name is chosen at run time, and [Registry.Get] for names written in code.
+func (r *Registry) Lookup(name string) (*Query, bool) {
+	q, ok := r.queries[name]
+
+	return q, ok
 }
 
-// Add registers a named query defined in Go code.
-// The SQL is sanitized once, exactly like queries loaded from files.
-func (r *Registry) Add(name, sql string) error {
-	if !validName(name) {
-		return fmt.Errorf("glimt: add: invalid query name %q", name)
+// Names returns the names of all queries, sorted.
+func (r *Registry) Names() []string {
+	names := make([]string, 0, len(r.queries))
+	for name := range r.queries {
+		names = append(names, name)
 	}
 
-	tpl, err := parseSQL(sql, r.dialect, true)
+	slices.Sort(names)
+
+	return names
+}
+
+// loader collects the queries and errors of a Load.
+type loader struct {
+	queries map[string]*Query
+	defined map[string]string // where each name was defined: file:line
+	errs    []error
+}
+
+// file loads the queries in one .sql file.
+func (l *loader) file(name, src string) {
+	chunks, err := syntax.SplitFile(src)
 	if err != nil {
-		return fmt.Errorf("glimt: add %s: %w", name, err)
+		l.fail(name, src, offsetOf(err), err)
+
+		return
 	}
 
-	if tpl.empty() {
-		return fmt.Errorf("glimt: add %s: empty query body", name)
+	for _, c := range chunks {
+		l.chunk(name, src, c)
+	}
+}
+
+// chunk compiles one query and records it, or the problem with it.
+func (l *loader) chunk(file, src string, c syntax.Chunk) {
+	here := fmt.Sprintf("%s:%d", file, c.Line)
+
+	switch first, dup := l.defined[c.Name]; {
+	case !validName(c.Name):
+		l.failAt(file, c.Line, fmt.Errorf("invalid query name %q: use letters, digits and _", c.Name))
+
+		return
+	case dup:
+		l.failAt(file, c.Line, fmt.Errorf("duplicate query name %q, first defined at %s", c.Name, first))
+
+		return
+	case c.Empty:
+		l.failAt(file, c.Line, fmt.Errorf("query %q has no SQL", c.Name))
+
+		return
 	}
 
-	return r.merge("Add", map[string]*template{name: tpl})
-}
+	l.defined[c.Name] = here
 
-// LoadFile reads SQL queries from a single file at the given path.
-func (r *Registry) LoadFile(path string) error {
-	return r.loadFile(os.DirFS(filepath.Dir(path)), filepath.Base(path), path)
-}
-
-// LoadFileFS reads SQL queries from a single file in the given fs.FS.
-func (r *Registry) LoadFileFS(fsys fs.FS, path string) error {
-	return r.loadFile(fsys, path, path)
-}
-
-// Load reads all .sql files in the given directory recursively.
-func (r *Registry) Load(dir string) error {
-	if _, err := os.Stat(dir); err != nil {
-		return fmt.Errorf("glimt: read dir %s: %w", dir, err)
-	}
-
-	return r.loadDir(os.DirFS(dir), ".", dir)
-}
-
-// LoadFS reads all .sql files recursively from the given fs.FS starting at dir.
-func (r *Registry) LoadFS(fsys fs.FS, dir string) error {
-	return r.loadDir(fsys, dir, "")
-}
-
-// loadDir walks dir in fsys and loads every .sql file.
-// base is prepended to paths in error messages.
-func (r *Registry) loadDir(fsys fs.FS, dir, base string) error {
-	return fs.WalkDir(fsys, dir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return fmt.Errorf("glimt: read dir %s: %w", displayPath(base, path), err)
-		}
-
-		if d.IsDir() || !strings.HasSuffix(strings.ToLower(d.Name()), ".sql") {
-			return nil
-		}
-
-		return r.loadFile(fsys, path, displayPath(base, path))
-	})
-}
-
-// loadFile parses one file and merges its queries into the registry.
-// display is the path used in error messages.
-func (r *Registry) loadFile(fsys fs.FS, path, display string) error {
-	data, err := fs.ReadFile(fsys, path)
+	q, err := compile(c.Name, c.Body)
 	if err != nil {
-		return fmt.Errorf("glimt: open %s: %w", display, err)
+		l.fail(file, src, c.Offset+offsetOf(err), err)
+
+		return
 	}
 
-	queries, err := parseFile(string(data), r.dialect)
-	if err != nil {
-		return fmt.Errorf("glimt: parse %s: %w", display, err)
-	}
-
-	return r.merge(display, queries)
+	l.queries[c.Name] = q
 }
 
-// merge adds queries to the registry. If any name already exists, nothing is added.
-func (r *Registry) merge(source string, queries map[string]*template) error {
-	for name := range queries {
-		if _, exists := r.queries[name]; exists {
-			return fmt.Errorf("glimt: duplicate query name %q in %s", name, source)
+// compile parses and compiles one query.
+func compile(name, body string) (*Query, error) {
+	p, err := syntax.Parse(body)
+	if err != nil {
+		return nil, err
+	}
+
+	tmpl, err := render.Compile(p)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Query{name: name, tmpl: tmpl, params: tmpl.Names()}, nil
+}
+
+// fail records err at byte offset off of a file.
+func (l *loader) fail(file, src string, off int, err error) {
+	line, col := syntax.Position(src, off)
+	l.errs = append(l.errs, &LoadError{File: file, Line: line, Col: col, Err: err})
+}
+
+// failAt records err at the start of a line of a file.
+func (l *loader) failAt(file string, line int, err error) {
+	l.errs = append(l.errs, &LoadError{File: file, Line: line, Col: 1, Err: err})
+}
+
+// offsetOf returns the source offset of a syntax error, or 0.
+func offsetOf(err error) int {
+	var serr *syntax.Error
+	if errors.As(err, &serr) {
+		return int(serr.Pos)
+	}
+
+	return 0
+}
+
+// validName reports whether name is a valid query name: ASCII letters,
+// digits and _, not starting with a digit.
+func validName(name string) bool {
+	if name == "" || '0' <= name[0] && name[0] <= '9' {
+		return false
+	}
+
+	for i := range len(name) {
+		if !isNameByte(name[i]) {
+			return false
 		}
 	}
 
-	maps.Copy(r.queries, queries)
-
-	return nil
+	return true
 }
 
-// displayPath joins base and an fs.FS path for error messages.
-func displayPath(base, path string) string {
-	if base == "" {
-		return path
-	}
-
-	return filepath.Join(base, filepath.FromSlash(path))
+// isNameByte reports whether c can be part of a query name.
+func isNameByte(c byte) bool {
+	return 'a' <= c|0x20 && c|0x20 <= 'z' || '0' <= c && c <= '9' || c == '_'
 }

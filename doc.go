@@ -1,310 +1,164 @@
-// Package glimt provides a lightweight SQL query builder for Go with support
-// for named queries and composable dynamic predicates.
+// Package glimt runs Postgres queries kept in .sql files, and adds filters,
+// sorting and paging to them per request.
 //
-// # Overview
+// glimt parses every query when the program starts, so it knows where each
+// query's WHERE, ORDER BY and LIMIT clauses are. At request time it binds
+// the query's params and adds the request's conditions, order and paging in
+// the right place. Values are always bound as args and never written into
+// the SQL.
 //
-// Named queries live in .sql files and are loaded into a registry at startup.
-// At runtime, queries are retrieved by name and extended with composable
-// predicates for dynamic filtering — including WHERE conditions, GROUP BY,
-// ORDER BY, LIMIT, and OFFSET — before being built into a parameterized SQL
-// string that is safe against injection.
+// # Writing queries
 //
-// The library has three core components:
+// Put each query after a "-- name:" line, and end it with ";":
 //
-//   - Registry — loads and caches named queries from .sql files
-//   - Query — a chainable builder for attaching dynamic clauses
-//   - Predicates — composable conditions for WHERE and HAVING clauses
+//	-- name: listOrders
+//	-- Orders of an organization, newest first.
+//	SELECT o.id, o.total, o.status
+//	FROM orders o
+//	WHERE o.org_id = :org
+//	ORDER BY o.created_at DESC;
 //
-// # Quick Start
+//	-- name: ordersByIDs
+//	SELECT id, total FROM orders WHERE id IN (:ids) AND org_id = :org;
 //
-// Write SQL in .sql files using annotations:
+// A query runs from its "-- name:" line to the next one. Names use ASCII
+// letters, digits and _, can't start with a digit, and must be unique across
+// all files. Comments in a query are dropped.
 //
-//	-- :name listUsers
-//	SELECT * FROM users
+// glimt rejects a second statement inside one query. The ";" is how it can
+// tell where the first one ends: without it, two UPDATE, INSERT or DELETE
+// statements can run together and load as one query, because those words can
+// also be column names.
 //
-//	-- :name getUserByID
-//	SELECT * FROM users WHERE id = ?
+// A line that looks like an annotation but isn't one, such as "-- Name: x",
+// is an error, so a typo can't make a query disappear.
 //
-// Load at startup and query at runtime:
+// # Loading
 //
-//	reg := glimt.NewRegistry(glimt.DialectPostgres)
-//	if err := reg.Load("queries/"); err != nil {
-//	    log.Fatal(err)
-//	}
-//
-//	sql, args := reg.MustGet("listUsers").
-//	    Where(glimt.And(
-//	        glimt.Eq("status", "active"),
-//	        glimt.Gt("age", 18),
-//	    )).
-//	    OrderBy("created_at DESC").
-//	    Limit(10).
-//	    Build()
-//
-//	db.QueryContext(ctx, sql, args...)
-//
-// Ad-hoc queries are supported through the registry as well:
-//
-//	sql, args := reg.Query("SELECT * FROM orders").
-//	    Where(glimt.Eq("user_id", userID)).
-//	    Build()
-//
-// # SQL Injection Safety
-//
-// glimt never interpolates values into SQL strings. Every value passed to a
-// predicate becomes a bound argument. Placeholders are rewritten to the correct
-// dialect format at build time:
-//
-//	reg.Query("SELECT * FROM users").
-//	    Where(glimt.Eq("name", "robert'); DROP TABLE users;--")).
-//	    Build()
-//	// SELECT * FROM users WHERE name = $1
-//	// args: ["robert'); DROP TABLE users;--"]
-//
-// Column names, Cond expressions, GroupBy and OrderBy are written into the SQL
-// as given. Never pass request input to them; use ParseSort for client-chosen
-// sorting.
-//
-// # Sorting
-//
-// ParseSort turns a client sort parameter such as "-created,total" into
-// ORDER BY expressions, accepting only allowlisted fields:
-//
-//	order, err := glimt.ParseSort(r.URL.Query().Get("sort"), map[string]string{
-//	    "created": "o.created_at",
-//	    "total":   "o.total",
-//	})
-//	if err != nil {
-//	    // *glimt.SortError: respond with 400 Bad Request
-//	}
-//
-//	q.OrderBy(append(order, "o.id")...) // unique tiebreaker for stable pages
-//
-// OrderByExpr adds an ORDER BY expression with bound arguments, such as a
-// search rank or a row pinned to the top. Request input goes in the
-// arguments, never in the expression:
-//
-//	q.OrderByExpr("CASE WHEN id = ? THEN 0 ELSE 1 END", pinnedID).OrderBy("name")
-//	// ORDER BY CASE WHEN id = $1 THEN 0 ELSE 1 END, name
-//
-// # Pagination
-//
-// BuildCount builds the total for the same filtered query, leaving out its
-// ORDER BY, LIMIT and OFFSET and their arguments:
-//
-//	q := reg.MustGet("listOrders").Args(orgID).Where(where...).OrderBy(order...)
-//
-//	page, pageArgs := q.Limit(size).Offset(offset).Build()
-//	total, totalArgs := q.BuildCount()
-//	// SELECT COUNT(*) FROM (SELECT ... WHERE org_id = $1 AND ...) AS t
-//
-// A query with GROUP BY counts groups. On MySQL, a SELECT * over a join can
-// produce duplicate column names, which the count's derived table rejects;
-// list the columns instead.
-//
-// # Predicates
-//
-// Predicates are composable conditions that can be combined with And, Or, and Not:
-//
-//	glimt.And(
-//	    glimt.Eq("status", "active"),
-//	    glimt.Or(
-//	        glimt.Eq("role", "admin"),
-//	        glimt.Eq("role", "mod"),
-//	    ),
-//	    glimt.Not(glimt.Null("deleted_at")),
-//	)
-//	// (status = ? AND (role = ? OR role = ?) AND NOT (deleted_at IS NULL))
-//
-// Available predicates: Cond, Eq, Neq, Gt, Gte, Lt, Lte, Like, NotLike,
-// ILike, Contains, StartsWith, EndsWith, IContains, IStartsWith, IEndsWith,
-// Null, NotNull, In, NotIn, InQuery, Exists, Between, NotBetween, RangeOpen,
-// And, Or, Not, If.
-//
-// For search boxes, Contains, StartsWith and EndsWith escape the LIKE
-// wildcards % and _ in user input, so they match literally. IContains,
-// IStartsWith and IEndsWith do the same and ignore case: Postgres renders
-// ILIKE, while MySQL and SQLite render LIKE, which ignores case under their
-// default collations (see IContains for the details):
-//
-//	glimt.Or(glimt.IContains("name", q), glimt.IContains("email", q))
-//	// Postgres: (name ILIKE $1 ESCAPE '!' OR email ILIKE $2 ESCAPE '!')
-//
-// Cond wraps its raw expression in parentheses, so a condition containing OR
-// keeps its meaning when combined with other predicates.
-//
-// # Optional Filters
-//
-// A nil predicate renders nothing, and so does an And, Or or Not with nothing
-// to render. WHERE and HAVING are omitted when no predicate renders. This lets
-// API handlers collect only the filters a request actually uses:
-//
-//	var where []glimt.Predicate
-//	if f.Status != "" {
-//	    where = append(where, glimt.Eq("status", f.Status))
-//	}
-//	if len(f.Roles) > 0 {
-//	    where = append(where, glimt.In("role", f.Roles...))
-//	}
-//
-//	sql, args := reg.MustGet("listUsers").Where(where...).Build()
-//
-// The same slice can be reused for a matching count query. If expresses a
-// single optional filter inline:
-//
-//	q.Where(glimt.If(f.Status != "", glimt.Eq("status", f.Status)))
-//
-// The arguments to If are evaluated even when the condition is false, so do
-// not dereference pointers inside it.
-//
-// In with an empty list renders 1=0 and matches no rows, so a filter such as
-// In("org_id", allowed...) cannot widen to every row. NotIn with an empty list
-// renders 1=1.
-//
-// Predicates follow SQL NULL semantics. A row whose column is NULL matches
-// neither Eq nor Neq, so Not and Exclude drop it too, and NotIn with a nil in
-// its list matches no rows. Use Null and NotNull to match NULL explicitly.
-//
-// # Dialects
-//
-// Dialect is configured once on the registry and applied to all queries:
-//
-//	glimt.NewRegistry(glimt.DialectPostgres)  // $1, $2, ...
-//	glimt.NewRegistry(glimt.DialectMySQL)     // ?, ?, ...
-//	glimt.NewRegistry(glimt.DialectSQLite)    // ?, ?, ...
-//
-// # Loading Queries
-//
-// The registry provides four methods for loading SQL files:
-//
-//	// load all .sql files recursively from a directory
-//	reg.Load("queries/")
-//
-//	// load all .sql files recursively from an fs.FS
-//	reg.LoadFS(sqlFiles, "queries")
-//
-//	// load a single file by path
-//	reg.LoadFile("queries/users.sql")
-//
-//	// load a single file from an fs.FS
-//	reg.LoadFileFS(sqlFiles, "queries/users.sql")
-//
-// SQL defined in Go code can be registered the same way with Add:
-//
-//	err := reg.Add("activeUsers", "SELECT * FROM users WHERE deleted_at IS NULL")
-//
-// Every query is sanitized once, when it is loaded or added, so Get does no
-// string work. Ad-hoc SQL passed to Query is sanitized the same way on every
-// call; prefer Add for SQL used on every request.
-//
-// Load or add queries at startup. After that, a Registry is safe for
-// concurrent use by multiple goroutines.
-//
-// # SQL File Format
-//
-// Files use '-- :name annotations'. A single file can contain multiple named
-// queries. Use ? as the placeholder regardless of dialect — glimt writes
-// them at build time.
-//
-//	-- :name listUsers
-//	SELECT * FROM users
-//
-//	-- :name getUserByID
-//	SELECT * FROM users WHERE id = ?
-//
-// Annotations must be on their own line. Spacing is flexible ("--:name x"
-// works), but any other "-- :word" annotation, or the "-- name: x" style used
-// by other tools, is a load error rather than a silent comment.
-//
-// SQL comments are stripped at load time: line comments (--, and # on MySQL)
-// and block comments (/* */) are removed before storing the query. Stripping
-// understands string literals, quoted identifiers and Postgres dollar-quoted
-// bodies, so text such as '--' or '/*' inside them is kept, and whitespace
-// inside literals is preserved. Optimizer hints (/*+ */) and MySQL executable
-// comments (/*! */) are kept.
-//
-// To write a literal question mark outside a string, such as the Postgres
-// JSONB ? operator, escape it as ??:
-//
-//	SELECT * FROM products WHERE attributes ?? 'color'
-//
-// On Postgres, use ? rather than native $1 placeholders; mixing the two would
-// number parameters twice, so $1 in a loaded query is a load error.
-//
-// The lexer reads string literals the way each database does by default. It
-// assumes Postgres runs with standard_conforming_strings=on (the default since
-// 9.1), and MySQL with backslash escapes enabled and without ANSI_QUOTES, the
-// default sql_mode. Under other settings a literal such as 'C:\' can be misread.
-//
-// Query names must be unique within a file and across all loaded files.
-// Duplicates, empty query bodies, unterminated quotes and unterminated
-// comments are caught at load time, and errors include the line number.
-//
-// # Embedded Files
-//
-// The registry supports embedded SQL files via fs.FS and embed.FS:
+// Embed the files and call [Load] once, at startup:
 //
 //	//go:embed queries
-//	var sqlFiles embed.FS
+//	var queries embed.FS
 //
-//	reg := glimt.NewRegistry(glimt.DialectPostgres)
-//	if err := reg.LoadFS(sqlFiles, "queries"); err != nil {
-//	    log.Fatal(err)
+//	reg, err := glimt.Load(queries, "queries")
+//	if err != nil {
+//		log.Fatal(err)
 //	}
 //
-// # Subqueries
+// Load parses and compiles every query and reports one error per broken
+// query, each a [*LoadError] with its file, line and column:
 //
-// InQuery and Exists embed another query, so both queries can be named in
-// .sql files:
+//	queries/orders.sql:9:13: glimt: expected expression after FROM, found "WHERE"
 //
-//	-- :name listUsers
-//	SELECT * FROM users
+// [Registry.Get] returns a query and panics when there is none by that name.
+// Call it for every query right after Load, so a missing one fails at
+// startup. [Registry.Lookup] is for names chosen at run time.
 //
-//	-- :name tripUserIDs
-//	SELECT user_id FROM trip_users
+// # Running a query
 //
-//	sql, args := reg.MustGet("listUsers").
-//	    Where(glimt.InQuery("id", reg.MustGet("tripUserIDs").Where(glimt.Eq("trip_id", tripID)))).
-//	    Build()
-//	// SELECT * FROM users WHERE id IN (SELECT user_id FROM trip_users WHERE trip_id = $1)
+// [Query.Build] binds the query's :name params from [Args] and returns the
+// SQL and args to pass to the driver:
 //
-// The subquery keeps its own Args, filters and clause markers. It is rendered
-// when the outer query is built, and all placeholders are numbered once. For
-// "not in", prefer Not(Exists(...)): NOT IN matches no rows as soon as the
-// subquery returns a NULL. MySQL does not allow LIMIT inside an IN subquery.
+//	sql, args, err := reg.Get("ordersByIDs").Build(glimt.Args{"ids": []int{4, 8}, "org": 7})
+//	// SELECT id, total FROM orders WHERE id IN ($1, $2) AND org_id = $3
+//	// args: [4 8 7]
 //
-// InQuery and Exists panic when given a nil query, which is always a
-// programming error. For a subquery filter that only applies sometimes, use If.
+//	rows, err := db.QueryContext(ctx, sql, args...)
 //
-// # Clause Markers
+// Args must hold a value for every param and nothing else. A name used
+// twice reuses its placeholder. IN (:name) expands a slice into one
+// placeholder per element; []byte, arrays and driver.Valuer types bind as
+// one value. When list lengths vary a lot, = ANY(:name) binds the slice as
+// one array and keeps the SQL the same for every length.
 //
-// By default, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT and OFFSET are appended
-// to the end of the query. To keep a fixed WHERE, a GROUP BY, a UNION or a
-// RETURNING clause in the SQL file, mark where the Where predicates go:
+// # Composing per request
 //
-//	-- :name countOrders
-//	SELECT status, COUNT(*) FROM orders
-//	WHERE org_id = ? AND deleted_at IS NULL /* :and */
-//	GROUP BY status
+// [Query.Bind] sets the params and returns a [Builder], which adds
+// conditions, ordering and paging. Each Builder method returns a new
+// Builder and leaves the old one unchanged, so a base can be shared and
+// extended per request:
 //
-//	sql, args := reg.MustGet("countOrders").
-//	    Args(orgID).
-//	    Where(glimt.Eq("region", region)).
-//	    Build()
-//	// ... WHERE org_id = $1 AND deleted_at IS NULL AND region = $2 GROUP BY status
+//	b := reg.Get("listOrders").Bind(glimt.Args{"org": 7}).
+//		Where(
+//			glimt.Eq("o.status", "paid"),
+//			glimt.If(minTotal > 0, glimt.Ge("o.total", minTotal)),
+//		).
+//		OrderBy(glimt.Desc("o.total")).
+//		ThenBy(glimt.Asc("o.id")).
+//		Limit(20).
+//		Offset(40)
 //
-// Two markers are available:
+//	sql, args, err := b.Build()
+//	// SELECT o.id, o.total, o.status FROM orders o
+//	// WHERE (o.org_id = $1) AND (o.status = $2 AND o.total >= $3)
+//	// ORDER BY o.total DESC, o.id LIMIT $4 OFFSET $5
 //
-//   - /* :where */ renders " WHERE <predicates>"
-//   - /* :and */ renders " AND <predicates>", after a fixed WHERE
+//	total, totalArgs, err := b.BuildCount()
+//	// SELECT count(*) FROM (SELECT o.id, o.total, o.status FROM orders o
+//	// WHERE (o.org_id = $1) AND (o.status = $2 AND o.total >= $3)) AS t
 //
-// Both render nothing when no predicate applies. Markers are SQL comments, so
-// the file still runs as-is in psql, the mysql client or sqlite3. A marker can
-// appear more than once (for example in each branch of a UNION); the predicates
-// are rendered at each one. Args fill the ? placeholders of the base SQL in
-// order, around the rendered predicates. GroupBy, Having, OrderBy, Limit and
-// Offset are still appended at the end.
+// Added conditions are ANDed with the query's own WHERE as
+// (original) AND (added), and never ORed, so a condition written in the
+// query, such as a tenant filter, always holds. A condition added to a query
+// with GROUP BY goes before the GROUP BY. Only the top-level statement is
+// composed; subqueries and CTEs stay as written.
 //
-// A fixed condition before /* :and */ that uses OR must be parenthesized:
-// WHERE (a OR b) /* :and */. Unknown markers are a load error.
+// [Builder.OrderBy] replaces the query's ORDER BY, and [Builder.ThenBy] adds
+// terms after it, such as a unique tiebreaker for stable pages.
+// [Builder.Limit] and [Builder.Offset] set LIMIT and OFFSET as bound args.
+// [Builder.BuildCount] counts the rows of the composed query, without its
+// ORDER BY, LIMIT, OFFSET, FETCH and locking clauses.
+//
+// Not every statement takes every change. A SELECT takes all of them. A
+// UNION, VALUES or TABLE takes ordering, paging and counting, but not
+// conditions. UPDATE and DELETE take conditions only. INSERT, MERGE and DDL
+// take none. Asking for a change a statement can't take is an error that
+// wraps [ErrNotComposable].
+//
+// # Conditions
+//
+// A [Pred] is one condition:
+//
+//   - comparisons: [Eq], [Ne], [Lt], [Le], [Gt], [Ge];
+//   - lists: [In], [NotIn];
+//   - NULL tests: [IsNull], [IsNotNull];
+//   - patterns: [Like], [NotLike], [ILike], [NotILike];
+//   - substrings, with % and _ in the text matching themselves: [Contains],
+//     [StartsWith], [EndsWith], and [IContains], [IStartsWith], [IEndsWith]
+//     to ignore case;
+//   - groups: [And], [Or], [Not].
+//
+// [If] returns its condition only when a Go condition holds, which keeps
+// optional request filters to one line each. The zero Pred adds nothing,
+// and when every condition adds nothing, no WHERE is added:
+//
+//	b = b.Where(
+//		glimt.If(req.Status != "", glimt.Eq("o.status", req.Status)),
+//		glimt.If(len(req.IDs) > 0, glimt.In("o.id", req.IDs)),
+//	)
+//
+// # Columns
+//
+// A column in a condition or order term is written into the SQL as given,
+// so it must come from your code. It must be a plain column reference such
+// as status, o.status or "Status"; anything else is an error that wraps
+// [ErrBadColumn].
+//
+// When a request chooses the column, as with ?sort=total, map the names it
+// may use to columns with [Columns]. Only the listed columns can be reached:
+//
+//	var sortable = glimt.Columns{"created": "o.created_at", "total": "o.total"}
+//
+//	b = b.OrderBy(sortable.Order(req.Sort, req.Desc))
+//
+// # Errors
+//
+// Every error message starts with "glimt:", after the file:line:col of a
+// [*LoadError]. Errors from Build and BuildCount wrap a sentinel, such as
+// [ErrMissingArg], [ErrEmptyList] or [ErrUnknownField], for errors.Is.
+//
+// # Concurrency
+//
+// A [Registry] and its queries never change after Load, and a Builder is a
+// value. All of them are safe to share between goroutines.
 package glimt
